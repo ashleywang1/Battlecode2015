@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>Battlecode 2015</name>
+	<comment></comment>
+	<projects>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>org.eclipse.jdt.core.javabuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>org.eclipse.jdt.core.javanature</nature>
+	</natures>
+	<linkedResources>
+		<link>
+			<name>bin</name>
+			<type>2</type>
+			<location>C:/Users/qyn/Desktop/MIT homework/6.147/Battlecode/bin</location>
+		</link>
+		<link>
+			<name>build.xml</name>
+			<type>1</type>
+			<location>C:/Users/qyn/Desktop/MIT homework/6.147/Battlecode/build.xml</location>
+		</link>
+		<link>
+			<name>examplefuncsplayer</name>
+			<type>2</type>
+			<location>C:/Users/qyn/Desktop/MIT homework/6.147/Battlecode/bin/examplefuncsplayer</location>
+		</link>
+		<link>
+			<name>lib</name>
+			<type>2</type>
+			<location>C:/Users/qyn/Desktop/MIT homework/6.147/Battlecode/lib</location>
+		</link>
+		<link>
+			<name>teams</name>
+			<type>2</type>
+			<location>C:/Users/qyn/Desktop/MIT homework/6.147/Battlecode/teams</location>
+		</link>
+	</linkedResources>
+</projectDescription>

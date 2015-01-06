@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" output="bin" path="teams"/>
+	<classpathentry kind="var" path="JRE_LIB" rootpath="JRE_SRCROOT" sourcepath="JRE_SRC"/>
+	<classpathentry kind="con" path="C:/Users/qyn/Desktop/MIT homework/6.147/Battlecode/bin"/>
+	<classpathentry kind="con" path="C:/Users/qyn/Desktop/MIT homework/6.147/Battlecode/bin/examplefuncsplayer"/>
+	<classpathentry kind="con" path="C:/Users/qyn/Desktop/MIT homework/6.147/Battlecode/lib"/>
+	<classpathentry kind="con" path="C:/Users/qyn/Desktop/MIT homework/6.147/Battlecode/teams"/>
+	<classpathentry kind="con" path="C:/Users/qyn/Desktop/MIT homework/6.147/Battlecode/teams/examplefuncsplayer"/>
+	<classpathentry kind="lib" path="C:/Users/qyn/Desktop/MIT homework/6.147/Battlecode/lib/battlecode-client.jar"/>
+	<classpathentry kind="lib" path="C:/Users/qyn/Desktop/MIT homework/6.147/Battlecode/lib/battlecode-player.jar"/>
+	<classpathentry kind="lib" path="C:/Users/qyn/Desktop/MIT homework/6.147/Battlecode/lib/battlecode-server.jar"/>
+	<classpathentry kind="lib" path="C:/Users/qyn/Desktop/MIT homework/6.147/Battlecode/lib/jogl.all.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
