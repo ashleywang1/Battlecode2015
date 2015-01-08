@@ -91,6 +91,8 @@ public class RobotPlayer {
         			runLauncher();
         		}
         		*/
+        		transferSupplies();
+        		
         		rc.yield();
         		
             } catch (Exception e) {
@@ -378,6 +380,23 @@ public class RobotPlayer {
 		}
 		return success; //use this to determine if spawn was successful or not
 	}
+	
+	private static void transferSupplies() throws GameActionException {
+        RobotInfo[] nearbyAllies = rc.senseNearbyRobots(rc.getLocation(),GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED,rc.getTeam());
+        double lowestSupply = rc.getSupplyLevel();
+        double transferAmount = 0;
+        MapLocation suppliesToThisLocation = null;
+        for(RobotInfo ri:nearbyAllies){
+            if(ri.supplyLevel<lowestSupply){
+                lowestSupply = ri.supplyLevel;
+                transferAmount = (rc.getSupplyLevel()-ri.supplyLevel)/2;
+                suppliesToThisLocation = ri.location;
+            }
+        }
+        if(suppliesToThisLocation!=null){
+            rc.transferSupplies((int)transferAmount, suppliesToThisLocation);
+        }
+    }
 	
 	static int directionToInt(Direction d) {
 		switch(d) {
