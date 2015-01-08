@@ -50,13 +50,13 @@ public class RobotPlayer {
         		} else if (rc.getType() == RobotType.MINER) {
         			runMiner();
         		}
-        		/*
-        		 * ARMY
+        		
+        		// * ARMY
         		//GROUND ARMY units
         		else if (rc.getType() == RobotType.BARRACKS) {
-        			runBarracks();
+        			Army.runBarracks();
         		} else if (rc.getType() == RobotType.SOLDIER) {
-        			runSoldier();
+        			Army.runSoldier();
         		} else if (rc.getType() == RobotType.BASHER) {
         			runBasher();
         		} else if (rc.getType() == RobotType.TANKFACTORY) {
@@ -64,7 +64,7 @@ public class RobotPlayer {
         		} else if (rc.getType() == RobotType.TANK) {
         			runTank();
         		}
-        		//SUPPLY
+        		/*//SUPPLY
         		else if (rc.getType() == RobotType.SUPPLYDEPOT) {
         			runSupplyDepot();
         		}
