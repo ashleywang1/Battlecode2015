@@ -19,7 +19,7 @@ public class RobotPlayer {
 	static Direction[] directions = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST};
 	
 	
-	public static void run(RobotController RC) {
+	public static void run(RobotController RC) throws GameActionException {
 		rc = RC;
         rand = new Random(rc.getID());
 
@@ -31,6 +31,11 @@ public class RobotPlayer {
 		myHQ = rc.senseHQLocation();
 		enemyTeam = myTeam.opponent();
 		enemyHQ = rc.senseEnemyHQLocation();
+		
+		if (rc.getType() == RobotType.BEAVER) {
+			int assignment = rc.readBroadcast(Comms.HQtoSpawnedBeaver);
+			rc.broadcast(Comms.memory(rc.getID()), assignment);
+		}
 		
 				
 		while(true) {
@@ -123,8 +128,11 @@ public class RobotPlayer {
 			spawnSuccess = trySpawn(directions[rand.nextInt(8)], RobotType.BEAVER);
 			if (spawnSuccess) {
 				if (rand.nextDouble() < .6) {
-					rc.broadcast(Comms.HQtoSpawnedBeaver, 1); //make it a barrack				
+					rc.broadcast(Comms.HQtoSpawnedBeaver, 0); //make it a minerfactory				
 				}
+				//else {
+					//rc.broadcast(Comms.HQtoSpawnedBeaver, 1); //make it a barrack
+				//}
 				rc.broadcast(Comms.beaverCount, numBeavers + 1);
 			}
 		}
@@ -144,26 +152,27 @@ public class RobotPlayer {
 				//
 				int numMiningFactories = rc.readBroadcast(Comms.miningfactoryCount);
 				int numBarracks = rc.readBroadcast(Comms.barracksCount);
-				System.out.println(numMiningFactories + "MF count and Barracks are " + numBarracks);
+				int maxOreFound = rc.readBroadcast(Comms.bestOreFieldAmount);
+				
 				//beaver 1 = mf
 				//beaver 2-4 = barracks
 				//beaver 5 = mf
-				int assignment = rc.readBroadcast(rc.getID()%10000);
+				int assignment = rc.readBroadcast(Comms.memory(rc.getID()));
+				System.out.println("my assignment is: " + assignment);
 				if (assignment == 0) { //minerfactory
 					if (rc.getTeamOre() >= 500 && numMiningFactories < 2) {
-						System.out.println("team ore over 500, ok ok");
-						if (rc.senseOre(rc.getLocation()) >= 20 ) {
-							System.out.println("sensed over 20 at location ok ok");
+						if (rc.senseOre(rc.getLocation()) >= maxOreFound ) {
 							boolean success = tryBuild(directions[rand.nextInt(8)],RobotType.MINERFACTORY);
+							if (success) {
+								rc.broadcast(Comms.miningfactoryCount, numMiningFactories + 1);
+							}
 						}
 					} else if (rand.nextDouble() < .5 && rc.senseOre(rc.getLocation())>=20){
 						rc.mine();
 					} else {
 
 						int oreFieldLoc = rc.readBroadcast(Comms.bestOreFieldLoc);
-						System.out.println(oreFieldLoc + "is where the best minefield is");
 						if (oreFieldLoc != 0) {
-							System.out.println(intToLoc(oreFieldLoc) + "is where we're supposed to go");
 							randomMove();
 						} else {
 							Direction awayFromHQ = myHQ.directionTo(rc.getLocation());
@@ -173,7 +182,7 @@ public class RobotPlayer {
 					}
 				}
 				if (assignment == 1) { //barracks
-					RobotInfo[] neighbors = rc.senseNearbyRobots(4);
+					RobotInfo[] neighbors = rc.senseNearbyRobots(myRange);
 					ArrayList<MapLocation> nearbyTowers = new ArrayList<>();
 					ArrayList<MapLocation> nearbyBarracks = new ArrayList<>();
 					for (RobotInfo x: neighbors) {
@@ -184,11 +193,14 @@ public class RobotPlayer {
 							nearbyBarracks.add(x.location); //right now not using locations, later could just make them ints
 						}
 					}
-					if (nearbyTowers.size() > 0 && nearbyBarracks.size() == 0) {
+					System.out.println("Assigned to barracks, with this many neighbors : " + nearbyTowers.size());
+					System.out.println("NearbyBarracks:" + nearbyBarracks.size());
+					if (nearbyTowers.size() > 0 && nearbyBarracks.size() == 0 && rc.getTeamOre() >= 300) {
 						Direction toEnemy = rc.getLocation().directionTo(enemyHQ);
 						tryBuild(toEnemy,RobotType.BARRACKS);
 					} else {
-						tryMove(rc.senseTowerLocations()[rand.nextInt(5)]);					
+						MapLocation[] towers = rc.senseTowerLocations();
+						tryMove(towers[towers.length - 1]);					
 					}	
 				}
 				
@@ -211,59 +223,103 @@ public class RobotPlayer {
 		
 		boolean success = false;
 		int numMiners = rc.readBroadcast(Comms.minerCount);
-		if (rc.isCoreReady() && rc.getTeamOre() >= RobotType.MINER.oreCost && numMiners < 50) {
-			trySpawn(directions[rand.nextInt(8)], RobotType.MINER);
-			success = true;
+		if (rc.isCoreReady() && rc.getTeamOre() >= RobotType.MINER.oreCost && numMiners < 100) {
+			int oreFields = rc.readBroadcast(Comms.bestOreFieldLoc);
+			
+			if (oreFields ==0) {
+				success = trySpawn(directions[rand.nextInt(8)], RobotType.MINER);
+			} else {
+				MapLocation oreLoc = intToLoc(oreFields);
+				success = trySpawn(rc.getLocation().directionTo(oreLoc), RobotType.MINER);
+			}
+			
+			//broadcast and update numMiners
+			if (success) {
+				rc.broadcast(Comms.minerCount, numMiners + 1);			
+			}
 		}
-		//broadcast and update numMiners
-		if (success) {
-			rc.broadcast(Comms.minerCount, numMiners + 1);			
-		}
-		
 	}
 
 
 	private static void runMiner() throws GameActionException {
 		
 		MapLocation spawnPoint;
-		RobotInfo[] neighbors;
+		RobotInfo[] enemies;
+		RobotInfo[] allies;
 		
-		neighbors = rc.senseNearbyRobots(5);
+		enemies = rc.senseNearbyRobots(myRange, enemyTeam);
+		allies = rc.senseNearbyRobots(myRange-2, myTeam);
+		//avoid enemies, tolerate allies to 3
+		//walls = rc.senseTerrainTile(rc.getLocation());
+		
 		if (rc.isCoreReady()) {
-			if (neighbors.length > 0) {
-				tryMove(neighbors[0].location.directionTo(rc.getLocation())); //move away from others
-			} else if (rc.senseOre(rc.getLocation()) > 12) {
+			MapLocation myLoc = rc.getLocation();
+			
+			if (allies.length > 0 && allies.length < 3) {
+				Direction away = allies[0].location.directionTo(myLoc);
+				if (rand.nextDouble() < .8) {
+					tryMove(away); //move away from others					
+				} else if (rand.nextDouble() < .5) {
+					tryMove(away.rotateLeft());
+				} else {
+					tryMove(away.rotateRight());
+				}
+				
+			} else if (enemies.length > 0) {
+				tryMove(enemies[0].location.directionTo(myLoc)); //move away from others
+			} else if (rc.senseOre(myLoc) > 12) {
 				rc.mine();
 			} else {
-				int loc = rc.readBroadcast(Comms.bestOreFieldLoc);
-				tryMove(intToLoc(loc));
+				int oreLoc = rc.readBroadcast(Comms.bestOreFieldLoc);
+				double front = rc.senseOre(myLoc.add(facing));
+				double right = rc.senseOre(myLoc.add(facing.rotateRight()));
+				double left = rc.senseOre(myLoc.add(facing.rotateLeft()));
+				if (front > 12) {
+					tryMove(facing);
+				} else if (oreLoc == 0 || Clock.getRoundNum() < 300) {
+					if (right > left) {
+						tryMove(facing.rotateRight());
+					}
+					else {
+						tryMove(facing.rotateLeft());
+					}	
+				} else {
+					MapLocation oreField = intToLoc(oreLoc);
+					tryMove(myLoc.directionTo(oreField));
+				}
+				
 			}
 		}
 		
 	}
 	
 	private static void goProspecting() throws GameActionException {
-		//check (the center of?) all corners of your sight
+		//TODO eventually don't just judge one square, make it all 16 squares in range
+		
+		int maxOre = Math.max(rc.readBroadcast(Comms.bestOreFieldAmount), 20);
 		double ore = rc.senseOre(rc.getLocation());
 		int loc = rc.readBroadcast(Comms.bestOreFieldLoc);
-		if (ore >= 30 && loc == 0) {
+		if (ore > maxOre) {
 			
 			int coords = locToInt(rc.getLocation());
-			System.out.println("HEY FOUND IT" + coords); //TODO
+			System.out.println("HEY FOUND BETTER" + coords); //TODO
 			rc.broadcast(Comms.bestOreFieldLoc, coords);
+			rc.broadcast(Comms.bestOreFieldAmount, (int) ore);
 		}
 	}
 	
 	private static int locToInt(MapLocation loc) {
-		System.out.println(loc.y + "why is this weird?");
+		
 		System.out.println(loc);
-		String.format("%04d", loc.x);
-		int coords = Integer.parseInt(Integer.toString(loc.x) + Integer.toString(loc.y));
+		String.format("%05d", loc.x);
+		int coords = Integer.parseInt(String.format("%05d", loc.x) + String.format("%05d", loc.y));
 		return coords;
 	}
 	
-	public static MapLocation intToLoc(int i){
-		return new MapLocation((i/10000)%10000,i%10000);
+	public static MapLocation intToLoc(int i){ //problem when both coords are negative
+		System.out.println(new MapLocation((i/100000)%100000,i%100000) + "is the decoded map location");
+		
+		return new MapLocation((i/100000)%100000,i%100000);
 	}
 
 
