@@ -1,6 +1,7 @@
 package ashleyplayer;
 
 import battlecode.common.*;
+
 import java.util.*;
 
 public class RobotPlayer {
@@ -21,6 +22,48 @@ public class RobotPlayer {
 		myTeam = rc.getTeam();
 		enemyTeam = myTeam.opponent();
 		RobotInfo[] myRobots;
+		
+		MapLocation[] myTowers;
+		
+		//run only once, when just spawned
+		try {
+			if (rc.getType() == RobotType.HQ) {
+				//find best location to put miningfactories
+				List<MapLocation> corners = new ArrayList<MapLocation>();
+				double ore;
+				
+				if (rc.canSenseLocation(rc.getLocation().add(5,5))) {
+					ore = rc.senseOre(rc.getLocation().add(5, 5));
+					corners.add(rc.getLocation().add(5, 5));
+				}
+				if (rc.canSenseLocation(rc.getLocation().add(5,-5))) {
+					ore = rc.senseOre(rc.getLocation().add(5, -5));
+					corners.add(rc.getLocation().add(5, -5));
+				}
+				if (rc.canSenseLocation(rc.getLocation().add(-5,5))) {
+					ore = rc.senseOre(rc.getLocation().add(-5, 5));
+					corners.add(rc.getLocation().add(-5, 5));
+				}
+				if (rc.canSenseLocation(rc.getLocation().add(-5,-5))) {
+					ore = rc.senseOre(rc.getLocation().add(-5, -5));
+					corners.add(rc.getLocation().add(-5, -5));
+				}
+				
+				System.out.println(corners);
+				System.out.println("corners!");
+				//place barracks near towers, in order of closest to farthest
+				
+			}
+			else if (rc.getType() == RobotType.BEAVER) {
+				int HQAssignment = rc.readBroadcast(Comms.HQtoSpawnedBeaver);
+				rc.broadcast((rc.getID()%10000), HQAssignment);			
+			}
+			
+		} catch (GameActionException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			System.out.println("Initialization Exception for robot:" + rc.getID());
+		}
 
 		while(true) {
             try {
@@ -29,6 +72,7 @@ public class RobotPlayer {
             } catch (Exception e) {
                 System.out.println("Unexpected exception");
                 e.printStackTrace();
+
             }
 
 			if (rc.getType() == RobotType.HQ) {
@@ -39,6 +83,10 @@ public class RobotPlayer {
 					int numBashers = 0;
 					int numBeavers = 0;
 					int numBarracks = 0;
+					int numMinerFactories = 0;
+					
+					boolean spawnSuccess = false;
+					
 					for (RobotInfo r : myRobots) {
 						RobotType type = r.type;
 						if (type == RobotType.SOLDIER) {
@@ -49,7 +97,9 @@ public class RobotPlayer {
 							numBeavers++;
 						} else if (type == RobotType.BARRACKS) {
 							numBarracks++;
-						}
+						} else if (type == RobotType.MINERFACTORY) {
+							numMinerFactories++;
+						} 
 					}
 					rc.broadcast(0, numBeavers);
 					rc.broadcast(1, numSoldiers);
@@ -61,7 +111,11 @@ public class RobotPlayer {
 					}
 
 					if (rc.isCoreReady() && rc.getTeamOre() >= 100 && fate < Math.pow(1.2,12-numBeavers)*10000) {
-						trySpawn(directions[rand.nextInt(8)], RobotType.BEAVER);
+						spawnSuccess = trySpawn(directions[rand.nextInt(8)], RobotType.BEAVER);
+					}
+					
+					if (spawnSuccess) {
+						rc.broadcast(Comms.HQtoSpawnedBeaver, 0);
 					}
 				} catch (Exception e) {
 					System.out.println("HQ Exception");
@@ -121,10 +175,29 @@ public class RobotPlayer {
 			
 			if (rc.getType() == RobotType.BEAVER) {
 				try {
+					//attacking
 					if (rc.isWeaponReady()) {
 						attackSomething();
 					}
+					
 					if (rc.isCoreReady()) {
+						/*
+						//get information
+						int numBeavers = rc.readBroadcast(0);
+						int numMinerFactories = rc.readBroadcast(4);
+						
+						//explore
+						if (numBeavers < 20) {
+							tryMove(directions[rand.nextInt(8)]);
+						}
+						
+						double ore = rc.senseOre(rc.getLocation());
+						
+						if (rc.getTeamOre() > 500 && numMinerFactories < 2 && ore >15) {
+							tryBuild(directions[rand.nextInt(8)],RobotType.MINERFACTORY);
+						}
+						*/
+						//
 						int fate = rand.nextInt(1000);
 						if (fate < 8 && rc.getTeamOre() >= 300) {
 							tryBuild(directions[rand.nextInt(8)],RobotType.BARRACKS);
@@ -191,17 +264,20 @@ public class RobotPlayer {
 	}
 	
     // This method will attempt to spawn in the given direction (or as close to it as possible)
-	static void trySpawn(Direction d, RobotType type) throws GameActionException {
+	static boolean trySpawn(Direction d, RobotType type) throws GameActionException {
 		int offsetIndex = 0;
 		int[] offsets = {0,1,-1,2,-2,3,-3,4};
 		int dirint = directionToInt(d);
 		boolean blocked = false;
+		boolean success = false;
 		while (offsetIndex < 8 && !rc.canSpawn(directions[(dirint+offsets[offsetIndex]+8)%8], type)) {
 			offsetIndex++;
 		}
 		if (offsetIndex < 8) {
 			rc.spawn(directions[(dirint+offsets[offsetIndex]+8)%8], type);
+			success = true;
 		}
+		return success; //use this to determine if spawn was successful or not
 	}
 	
     // This method will attempt to build in the given direction (or as close to it as possible)
