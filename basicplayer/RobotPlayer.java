@@ -55,8 +55,10 @@ public class RobotPlayer {
         			runMinerFactory();
         		} else if (rc.getType() == RobotType.MINER) {
         			runMiner();
+        		}else if(rc.getType()==RobotType.TOWER){
+        			attackEnemyZero();
         		}
-        		/*
+        		
         		// * ARMY
         		//GROUND ARMY units
         		else if (rc.getType() == RobotType.BARRACKS) {
@@ -64,14 +66,14 @@ public class RobotPlayer {
         		} else if (rc.getType() == RobotType.SOLDIER) {
         			Army.runSoldier();
         		} else if (rc.getType() == RobotType.BASHER) {
-        			runBasher();
+        			Army.runBasher();
         		} else if (rc.getType() == RobotType.TANKFACTORY) {
-        			runTankFactory();
+        			Army.runTankFactory();
         		} else if (rc.getType() == RobotType.TANK) {
-        			runTank();
+        			Army.runTank();
         		}
         	
-        		//SUPPLY
+        		/*//SUPPLY
         		else if (rc.getType() == RobotType.SUPPLYDEPOT) {
         			runSupplyDepot();
         		}
@@ -85,7 +87,8 @@ public class RobotPlayer {
         		} else if (rc.getType() == RobotType.COMMANDER) {
         			runCommander();
         		}
-        		//AIR ARMY units
+        		
+        		/AIR ARMY units
         		else if (rc.getType() == RobotType.HELIPAD) {
         			runHelipad();
         		} else if (rc.getType() == RobotType.DRONE) {
@@ -96,15 +99,44 @@ public class RobotPlayer {
         			runLauncher();
         		}
         		*/
-        		rc.yield();
+        		
+        		transferSupplies();
+        		
+        		
+        		
         		
             } catch (Exception e) {
                 System.out.println("Unexpected exception");
                 e.printStackTrace();
 
             }
+			
+			rc.yield();
 
 		}
+	}
+
+
+
+	private static void transferSupplies() throws GameActionException {
+		//TODO don't transfer to towers
+		//TODO have the HQ transfer everything
+		//TODO how to improve?
+		RobotInfo[] nearbyAllies = rc.senseNearbyRobots(rc.getLocation(),GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED, rc.getTeam());
+		double lowestSupply = rc.getSupplyLevel();
+		double transferAmount = 0;
+		MapLocation suppliesToThisLoc = null;
+		for (RobotInfo ri:nearbyAllies){
+			if(ri.supplyLevel<lowestSupply && ri.type != RobotType.TOWER && ri.type != RobotType.MINERFACTORY){
+				lowestSupply = ri.supplyLevel;
+				transferAmount = (rc.getSupplyLevel()-ri.supplyLevel)/2;
+				suppliesToThisLoc = ri.location;
+			}
+			if(suppliesToThisLoc!=null && rc.senseRobotAtLocation(suppliesToThisLoc) !=null){
+				rc.transferSupplies((int)transferAmount, suppliesToThisLoc);
+			}
+		}
+		
 	}
 
 
@@ -315,7 +347,7 @@ public class RobotPlayer {
 	}
 	
 	public static MapLocation intToLoc(int i){ //problem when both coords are negative
-		System.out.println(new MapLocation((i/100000)%100000,i%100000) + "is the decoded map location");
+		//System.out.println(new MapLocation((i/100000)%100000,i%100000) + "is the decoded map location");
 		
 		return new MapLocation((i/100000)%100000,i%100000);
 	}
@@ -359,7 +391,7 @@ public class RobotPlayer {
 		}
 	}
 
-	private static void tryMove(MapLocation loc) throws GameActionException {
+	public static void tryMove(MapLocation loc) throws GameActionException {
 		int offsetIndex = 0;
 		int[] offsets = {0,1,-1,2,-2};
 		boolean blocked = false;
@@ -374,7 +406,7 @@ public class RobotPlayer {
 		}
 	}
 	
-	private static void randomMove() throws GameActionException {
+	public static void randomMove() throws GameActionException {
 		if (rand.nextDouble() < .5) {
 			if (rand.nextDouble() < .5) {
 				facing = facing.rotateLeft();
