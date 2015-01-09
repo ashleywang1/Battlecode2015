@@ -43,6 +43,8 @@ public class RobotPlayer {
         			runHQ();
         		} else if (rc.getType() == RobotType.BEAVER) {
         			runBeaver();
+        		}else if (rc.getType()==RobotType.TOWER){
+        			runTower();
         		}
         		//MINING units
         		else if (rc.getType() == RobotType.MINERFACTORY) {
@@ -53,7 +55,7 @@ public class RobotPlayer {
         		
         		// * ARMY
         		//GROUND ARMY units
-        		else if (rc.getType() == RobotType.BARRACKS) {
+        		/*else if (rc.getType() == RobotType.BARRACKS) {
         			Army.runBarracks();
         		} else if (rc.getType() == RobotType.SOLDIER) {
         			Army.runSoldier();
@@ -63,7 +65,7 @@ public class RobotPlayer {
         			runTankFactory();
         		} else if (rc.getType() == RobotType.TANK) {
         			runTank();
-        		}
+        		}*/
         		/*//SUPPLY
         		else if (rc.getType() == RobotType.SUPPLYDEPOT) {
         			runSupplyDepot();
@@ -111,7 +113,7 @@ public class RobotPlayer {
 		boolean spawnSuccess = false;
 		
 		if (rc.isWeaponReady()) {
-			attackEnemyZero();
+			Attack.attackEnemyZero();
 		}
 
 		if (rc.isCoreReady() && rc.getTeamOre() >= 100 ) { //&& fate < Math.pow(1.2,12-numBeavers)*10000
@@ -119,10 +121,13 @@ public class RobotPlayer {
 		}
 	}
 
-
+	private static void runTower() throws GameActionException {
+		Attack.attackEnemyZero();
+		
+	}
 	private static void runBeaver() throws GameActionException {
 		if (rc.isWeaponReady()) {
-			attackEnemyZero();
+			Attack.attackEnemyZero();
 		}
 		if (rc.isCoreReady()) {
 			int round = Clock.getRoundNum(); //Is there a more efficient place to put this? TODO
@@ -188,12 +193,7 @@ public class RobotPlayer {
 		System.out.println("ore at 0,0 is: " + ore);
 	}
 	
-	static void attackEnemyZero() throws GameActionException {
-		RobotInfo[] enemies = rc.senseNearbyRobots(myRange, enemyTeam);
-		if (enemies.length > 0) {
-			rc.attackLocation(enemies[0].location);
-		}
-	}
+
 
     // This method will attempt to build in the given direction (or as close to it as possible)
 	static void tryBuild(Direction d, RobotType type) throws GameActionException {
