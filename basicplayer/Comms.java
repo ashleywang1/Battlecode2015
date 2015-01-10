@@ -24,7 +24,7 @@ public class Comms {
 	//A robot can broadcast to and read from the channel corresponding to its ID's first 4 digits. This is used to preserve memory between rounds.
 
 	public static int memory(int id) {
-		System.out.println(id%10000 + "is my own personall channel id");
+		
 		return id%10000;
 	}
 	

@@ -35,6 +35,7 @@ public class RobotPlayer {
 		if (rc.getType() == RobotType.BEAVER) {
 			int assignment = rc.readBroadcast(Comms.HQtoSpawnedBeaver);
 			rc.broadcast(Comms.memory(rc.getID()), assignment);
+			System.out.println(rc.getID()%10000 + " is my own personall channel id");
 		}
 		
 				
@@ -59,7 +60,7 @@ public class RobotPlayer {
         			attackEnemyZero();
         		}
         		
-        		// * ARMY
+        		//ARMY
         		//GROUND ARMY units
         		else if (rc.getType() == RobotType.BARRACKS) {
         			Army.runBarracks();
@@ -100,7 +101,7 @@ public class RobotPlayer {
         		}
         		*/
         		
-        		transferSupplies();
+        		//transferSupplies(); //TODO this function is breaking the game TANIAAAA
         		
         		
         		
@@ -117,12 +118,13 @@ public class RobotPlayer {
 	}
 
 
-
+/*
 	private static void transferSupplies() throws GameActionException {
 		//TODO don't transfer to towers
 		//TODO have the HQ transfer everything
 		//TODO how to improve?
-		RobotInfo[] nearbyAllies = rc.senseNearbyRobots(rc.getLocation(),GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED, rc.getTeam());
+		double range = Math.sqrt(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED);
+		RobotInfo[] nearbyAllies = rc.senseNearbyRobots(rc.getLocation(),(int) range, rc.getTeam());
 		double lowestSupply = rc.getSupplyLevel();
 		double transferAmount = 0;
 		MapLocation suppliesToThisLoc = null;
@@ -138,7 +140,7 @@ public class RobotPlayer {
 		}
 		
 	}
-
+	*/
 
 	private static void runHQ() throws GameActionException {
 
@@ -154,16 +156,22 @@ public class RobotPlayer {
 		}
 		if (rc.isCoreReady()) { //&& fate < Math.pow(1.2,12-numBeavers)*10000
 			int numBeavers = rc.readBroadcast(Comms.beaverCount);
-			if (rc.getTeamOre() >= 100 && numBeavers < 5) 
-			spawnSuccess = trySpawn(directions[rand.nextInt(8)], RobotType.BEAVER);
-			if (spawnSuccess) {
-				if (rand.nextDouble() < .6) {
-					rc.broadcast(Comms.HQtoSpawnedBeaver, 0); //make it a minerfactory				
+			if (Clock.getRoundNum() < 500 && rc.getTeamOre() >= 100 && numBeavers < 5) {
+				spawnSuccess = trySpawn(directions[rand.nextInt(8)], RobotType.BEAVER);
+				if (spawnSuccess) {
+					if (rand.nextDouble() < .6) {
+						rc.broadcast(Comms.HQtoSpawnedBeaver, 0); //make it a minerfactory				
+					}
+					rc.broadcast(Comms.beaverCount, numBeavers + 1);
 				}
-				//else {
-					//rc.broadcast(Comms.HQtoSpawnedBeaver, 1); //make it a barrack
-				//}
-				rc.broadcast(Comms.beaverCount, numBeavers + 1);
+			} else if (rc.getTeamOre() >= 100 && numBeavers < 15){
+				spawnSuccess = trySpawn(directions[rand.nextInt(8)], RobotType.BEAVER);
+				if (spawnSuccess) {
+					if (rand.nextDouble() < .6) {
+						rc.broadcast(Comms.HQtoSpawnedBeaver, 0); //make it a minerfactory				
+					}
+					rc.broadcast(Comms.beaverCount, numBeavers + 1);
+				}
 			}
 		}
 		
@@ -184,12 +192,12 @@ public class RobotPlayer {
 				int numBarracks = rc.readBroadcast(Comms.barracksCount);
 				int maxOreFound = rc.readBroadcast(Comms.bestOreFieldAmount);
 				
-				//beaver 1 = mf
-				//beaver 2-4 = barracks
-				//beaver 5 = mf
+				//beaver 1 = mf right next to hq
+				//beaver 2-4 = barracks next to towers
+				//beaver 5 = mf right in center
 				int assignment = rc.readBroadcast(Comms.memory(rc.getID()));
-				System.out.println("my assignment is: " + assignment);
-				if (assignment == 0) { //minerfactory
+				//System.out.println("my assignment is: " + assignment);
+				if (numMiningFactories < 2) { //minerfactory
 					if (rc.getTeamOre() >= 500 && numMiningFactories < 2) {
 						if (rc.senseOre(rc.getLocation()) >= maxOreFound ) {
 							boolean success = tryBuild(directions[rand.nextInt(8)],RobotType.MINERFACTORY);
@@ -203,15 +211,14 @@ public class RobotPlayer {
 
 						int oreFieldLoc = rc.readBroadcast(Comms.bestOreFieldLoc);
 						if (oreFieldLoc != 0) {
-							randomMove();
+							Map.randomMove();
 						} else {
 							Direction awayFromHQ = myHQ.directionTo(rc.getLocation());
-							tryMove(awayFromHQ);
+							Map.tryMove(awayFromHQ);
 						}
 
 					}
-				}
-				if (assignment == 1) { //barracks
+				} else if (numBarracks < 4) { //barracks
 					RobotInfo[] neighbors = rc.senseNearbyRobots(myRange);
 					ArrayList<MapLocation> nearbyTowers = new ArrayList<>();
 					ArrayList<MapLocation> nearbyBarracks = new ArrayList<>();
@@ -230,7 +237,7 @@ public class RobotPlayer {
 						tryBuild(toEnemy,RobotType.BARRACKS);
 					} else {
 						MapLocation[] towers = rc.senseTowerLocations();
-						tryMove(towers[towers.length - 1]);					
+						Map.tryMove(towers[towers.length - 1]);					
 					}	
 				}
 				
@@ -241,9 +248,9 @@ public class RobotPlayer {
 				if (fate < 600) {
 					rc.mine();
 				} else if (fate < 800) {
-					tryMove(directions[rand.nextInt(8)]);
+					Map.tryMove(directions[rand.nextInt(8)]);
 				} else {
-					tryMove(rc.senseHQLocation().directionTo(rc.getLocation()));
+					Map.tryMove(rc.senseHQLocation().directionTo(rc.getLocation()));
 				}
 			}
 		}
@@ -259,7 +266,7 @@ public class RobotPlayer {
 			if (oreFields ==0) {
 				success = trySpawn(directions[rand.nextInt(8)], RobotType.MINER);
 			} else {
-				MapLocation oreLoc = intToLoc(oreFields);
+				MapLocation oreLoc = Map.intToLoc(oreFields);
 				success = trySpawn(rc.getLocation().directionTo(oreLoc), RobotType.MINER);
 			}
 			
@@ -284,19 +291,20 @@ public class RobotPlayer {
 		
 		if (rc.isCoreReady()) {
 			MapLocation myLoc = rc.getLocation();
-			
-			if (allies.length > 0 && allies.length < 3) {
-				Direction away = allies[0].location.directionTo(myLoc);
+			MapLocation miner = nearestMiner(allies);
+			if (allies.length > 0 && allies.length < 3 && miner!=null) { //except don't move away from towers TODO
+				
+				Direction away = miner.directionTo(myLoc);
 				if (rand.nextDouble() < .8) {
-					tryMove(away); //move away from others					
+					Map.tryMove(away); //move away from others					
 				} else if (rand.nextDouble() < .5) {
-					tryMove(away.rotateLeft());
+					Map.tryMove(away.rotateLeft());
 				} else {
-					tryMove(away.rotateRight());
+					Map.tryMove(away.rotateRight());
 				}
 				
 			} else if (enemies.length > 0) {
-				tryMove(enemies[0].location.directionTo(myLoc)); //move away from others
+				Map.tryMove(enemies[0].location.directionTo(myLoc)); //move away from others
 			} else if (rc.senseOre(myLoc) > 12) {
 				rc.mine();
 			} else {
@@ -305,17 +313,17 @@ public class RobotPlayer {
 				double right = rc.senseOre(myLoc.add(facing.rotateRight()));
 				double left = rc.senseOre(myLoc.add(facing.rotateLeft()));
 				if (front > 12) {
-					tryMove(facing);
+					Map.tryMove(facing);
 				} else if (oreLoc == 0 || Clock.getRoundNum() < 300) {
 					if (right > left) {
-						tryMove(facing.rotateRight());
+						Map.tryMove(facing.rotateRight());
 					}
 					else {
-						tryMove(facing.rotateLeft());
+						Map.tryMove(facing.rotateLeft());
 					}	
 				} else {
-					MapLocation oreField = intToLoc(oreLoc);
-					tryMove(myLoc.directionTo(oreField));
+					MapLocation oreField = Map.intToLoc(oreLoc);
+					Map.tryMove(myLoc.directionTo(oreField));
 				}
 				
 			}
@@ -323,36 +331,52 @@ public class RobotPlayer {
 		
 	}
 	
+	private static void transferSupplies() throws GameActionException {
+		RobotInfo[] nearbyAllies = rc.senseNearbyRobots(rc.getLocation(),GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED, rc.getTeam());
+		double lowestSupply = rc.getSupplyLevel();
+		double transferAmount = 0;
+		MapLocation suppliesToThisLoc = null;
+		for (RobotInfo ri:nearbyAllies){
+			if(ri.supplyLevel<lowestSupply){
+				lowestSupply = ri.supplyLevel;
+				transferAmount = (rc.getSupplyLevel()-ri.supplyLevel)/2;
+				suppliesToThisLoc = ri.location;
+				
+			}
+			if(suppliesToThisLoc!=null){
+				rc.transferSupplies((int)transferAmount, suppliesToThisLoc);
+			}
+		}
+		
+	}
+	
+	private static MapLocation nearestMiner(RobotInfo[] allies) {
+		for (RobotInfo ri: allies) {
+			if (ri.type == RobotType.MINER) {
+				return ri.location;
+			}
+		}
+		return null;
+	}
+
+
+
 	private static void goProspecting() throws GameActionException {
 		//TODO eventually don't just judge one square, make it all 16 squares in range
+		//eventually once this region dries up, change the best ore field
 		
 		int maxOre = Math.max(rc.readBroadcast(Comms.bestOreFieldAmount), 20);
 		double ore = rc.senseOre(rc.getLocation());
 		int loc = rc.readBroadcast(Comms.bestOreFieldLoc);
 		if (ore > maxOre) {
 			
-			int coords = locToInt(rc.getLocation());
+			int coords = Map.locToInt(rc.getLocation());
 			System.out.println("HEY FOUND BETTER" + coords); //TODO
 			rc.broadcast(Comms.bestOreFieldLoc, coords);
 			rc.broadcast(Comms.bestOreFieldAmount, (int) ore);
 		}
 	}
 	
-	private static int locToInt(MapLocation loc) {
-		
-		System.out.println(loc);
-		String.format("%05d", loc.x);
-		int coords = Integer.parseInt(String.format("%05d", loc.x) + String.format("%05d", loc.y));
-		return coords;
-	}
-	
-	public static MapLocation intToLoc(int i){ //problem when both coords are negative
-		//System.out.println(new MapLocation((i/100000)%100000,i%100000) + "is the decoded map location");
-		
-		return new MapLocation((i/100000)%100000,i%100000);
-	}
-
-
 	static void attackEnemyZero() throws GameActionException {
 		RobotInfo[] enemies = rc.senseNearbyRobots(myRange, enemyTeam);
 		if (enemies.length > 0) {
@@ -364,7 +388,7 @@ public class RobotPlayer {
 	static boolean tryBuild(Direction d, RobotType type) throws GameActionException {
 		int offsetIndex = 0;
 		int[] offsets = {0,1,-1,2,-2,3,-3,4};
-		int dirint = directionToInt(d);
+		int dirint = Map.directionToInt(d);
 		boolean blocked = false;
 		boolean success = false;
 		while (offsetIndex < 8 && !rc.canMove(directions[(dirint+offsets[offsetIndex]+8)%8])) {
@@ -377,84 +401,12 @@ public class RobotPlayer {
 		return success;
 	}
 	
-    // This method will attempt to move in Direction d (or as close to it as possible)
-	static void tryMove(Direction d) throws GameActionException {
-		int offsetIndex = 0;
-		int[] offsets = {0,1,-1,2,-2};
-		int dirint = directionToInt(d);
-		boolean blocked = false;
-		while (offsetIndex < 5 && !rc.canMove(directions[(dirint+offsets[offsetIndex]+8)%8])) {
-			offsetIndex++;
-		}
-		if (offsetIndex < 5) {
-			rc.move(directions[(dirint+offsets[offsetIndex]+8)%8]);
-		}
-	}
-
-	public static void tryMove(MapLocation loc) throws GameActionException {
-		int offsetIndex = 0;
-		int[] offsets = {0,1,-1,2,-2};
-		boolean blocked = false;
-		Direction d = rc.getLocation().directionTo(loc);
-		int dirint = directionToInt(d);
-		
-		while (offsetIndex < 5 && !rc.canMove(directions[(dirint+offsets[offsetIndex]+8)%8])) {
-			offsetIndex++;
-		}
-		if (offsetIndex < 5) {
-			rc.move(directions[(dirint+offsets[offsetIndex]+8)%8]);
-		}
-	}
-	
-	public static void randomMove() throws GameActionException {
-		if (rand.nextDouble() < .5) {
-			if (rand.nextDouble() < .5) {
-				facing = facing.rotateLeft();
-			} else {
-				facing = facing.rotateRight();
-			}
-		}
-		//avoid void and offmap tiles
-		double p = rand.nextDouble();
-		while (rc.senseTerrainTile(rc.getLocation().add(facing)) != TerrainTile.NORMAL) {
-			if (p < .5) {
-				facing = facing.rotateLeft();
-			} else {
-				facing = facing.rotateRight();
-			}
-		}
-		if (rc.isCoreReady() && rc.canMove(facing)) {
-			rc.move(facing);
-		}
-	}
-	
-    // This method will randomly move in Direction d
-	static void wanderToward(Direction d, double urgency) throws GameActionException {
-		double p = rand.nextDouble();
-		
-		if (p < urgency) {
-			tryMove(d);
-		} else {
-			randomMove();
-		}
-	}
-
-	static void wanderTo(MapLocation target, double urgency) throws GameActionException {
-		double p = rand.nextDouble();
-		Direction d = rc.getLocation().directionTo(target);
-		
-		if (p < urgency) {
-			tryMove(d);
-		} else {
-			randomMove();
-		}
-	}
 	
 	// This method will attempt to spawn in the given direction (or as close to it as possible)
 	static boolean trySpawn(Direction d, RobotType type) throws GameActionException {
 		int offsetIndex = 0;
 		int[] offsets = {0,1,-1,2,-2,3,-3,4};
-		int dirint = directionToInt(d);
+		int dirint = Map.directionToInt(d);
 		boolean blocked = false;
 		boolean success = false;
 		while (offsetIndex < 8 && !rc.canSpawn(directions[(dirint+offsets[offsetIndex]+8)%8], type)) {
@@ -465,29 +417,6 @@ public class RobotPlayer {
 			success = true;
 		}
 		return success; //use this to determine if spawn was successful or not
-	}
-	
-	static int directionToInt(Direction d) {
-		switch(d) {
-			case NORTH:
-				return 0;
-			case NORTH_EAST:
-				return 1;
-			case EAST:
-				return 2;
-			case SOUTH_EAST:
-				return 3;
-			case SOUTH:
-				return 4;
-			case SOUTH_WEST:
-				return 5;
-			case WEST:
-				return 6;
-			case NORTH_WEST:
-				return 7;
-			default:
-				return -1;
-		}
 	}
 
 }
