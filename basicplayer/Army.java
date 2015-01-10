@@ -38,9 +38,11 @@ public class Army {
 		}
 		if (rc.isCoreReady()) {
 			if (Clock.getRoundNum() < 1200) {
-				Map.wanderTo(enemyHQ, .3);				
+				//Map.wanderTo(enemyHQ, .05);
+				Map.randomMove();
 			} else {
 				Map.tryMove(enemyHQ);
+				//RobotPlayer.goProspecting();
 			}
 				
 		}

@@ -102,8 +102,8 @@ public class RobotPlayer {
         		*/
 
         		
-        		//transferSupplies(); //TODO this function is breaking the game TANIAAAA
-        		
+
+        		transferSupplies(); //TODO this function is breaking the game TANIAAAA        		
         		
         		
             } catch (Exception e) {
@@ -120,9 +120,9 @@ public class RobotPlayer {
 
 /*
 	private static void transferSupplies() throws GameActionException {
-		//TODO don't transfer to towers
-		//TODO have the HQ transfer everything
-		//TODO how to improve?
+		//don't transfer to towers
+		//have the HQ transfer everything
+		
 		double range = Math.sqrt(GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED);
 		RobotInfo[] nearbyAllies = rc.senseNearbyRobots(rc.getLocation(),(int) range, rc.getTeam());
 		double lowestSupply = rc.getSupplyLevel();
@@ -275,6 +275,12 @@ public class RobotPlayer {
 				rc.broadcast(Comms.minerCount, numMiners + 1);			
 			}
 		}
+		
+		//if under attack, broadcast for help
+		if (rc.getHealth() < 20) {
+			int numMF = rc.readBroadcast(Comms.miningfactoryCount);
+			rc.broadcast(Comms.miningfactoryCount, numMF - 1);
+		}
 	}
 
 
@@ -292,7 +298,7 @@ public class RobotPlayer {
 		if (rc.isCoreReady()) {
 			MapLocation myLoc = rc.getLocation();
 			MapLocation miner = nearestMiner(allies);
-			if (allies.length > 0 && allies.length < 3 && miner!=null) { //except don't move away from towers TODO
+			if (allies.length < 3 && miner!=null) { //if you're not crowded
 				
 				Direction away = miner.directionTo(myLoc);
 				if (rand.nextDouble() < .8) {
@@ -361,7 +367,7 @@ public class RobotPlayer {
 
 
 
-	private static void goProspecting() throws GameActionException {
+	public static void goProspecting() throws GameActionException {
 		//TODO eventually don't just judge one square, make it all 16 squares in range
 		//eventually once this region dries up, change the best ore field
 		
@@ -417,18 +423,19 @@ public class RobotPlayer {
 			success = true;
 		}
 		return success; //use this to determine if spawn was successful or not
-<<<<<<< HEAD
 	}
 	
 	private static void transferSupplies() throws GameActionException {
+	    boolean isHQ = rc.getType() == RobotType.HQ;
         RobotInfo[] nearbyAllies = rc.senseNearbyRobots(rc.getLocation(),GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED,rc.getTeam());
         double lowestSupply = rc.getSupplyLevel();
-        double transferAmount = 0;
+        double transferAmount = rc.getSupplyLevel();
         MapLocation suppliesToThisLocation = null;
         for(RobotInfo ri:nearbyAllies){
             if(ri.supplyLevel<lowestSupply){
                 lowestSupply = ri.supplyLevel;
-                transferAmount = (rc.getSupplyLevel()-ri.supplyLevel)/2;
+                if (!isHQ)
+                    transferAmount = (rc.getSupplyLevel()-ri.supplyLevel)/2;
                 suppliesToThisLocation = ri.location;
             }
         }
@@ -458,8 +465,6 @@ public class RobotPlayer {
 			default:
 				return -1;
 		}
-=======
->>>>>>> branch 'master' of ssh://git@github.com/ashleywang1/Battlecode2015.git
 	}
 
 }
