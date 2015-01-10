@@ -19,6 +19,11 @@ public class Comms {
 	public static final int bestOreFieldLoc = 11;
 	public static final int bestOreFieldAmount = 12;
 	
+	
+	//Army information
+	public static final int rushOver = 13;
+	public static final int casualties = 14;
+	
 	//robot ID channel
 	//All 4 digit broadcasting channels are reserved for robot ID channels. (ID - fist digit)
 	//A robot can broadcast to and read from the channel corresponding to its ID's first 4 digits. This is used to preserve memory between rounds.

@@ -20,11 +20,15 @@ public class Attack {
 	static Direction[] directions = RobotPlayer.directions;
 	
 
-	public static void nearestEnemy() throws GameActionException {
-		RobotInfo[] enemies = rc.senseNearbyRobots(myRange, enemyTeam);
-		if (enemies.length > 0) {
-			rc.attackLocation(enemies[0].location);
+	public static void enemyZero() throws GameActionException {
+		if (rc.isWeaponReady()) {
+			RobotPlayer.attackEnemyZero();
 		}
 	}
+	
+	
+	
+	
+	//if you sense a tower nearby, stop and attack only the tower TODO
 
 }
