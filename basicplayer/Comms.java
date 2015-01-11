@@ -10,11 +10,14 @@ public class Comms {
 	public static final int minerCount = 5;
 	public static final int miningfactoryCount = 6;
 	public static final int supplydepotCount = 7;
+	public static final int MITCount = 8;
+	public static final int TrainingFieldCount = 9;
+	public static final int commanderCount = 10;
 	
 	
 	/*When a beaver is spawned from the HQ, use this channel to communicate info.
 	This info is usually read and then rebroadcasted to the robot's own ID channel. */
-	public static final int HQtoSpawnedBeaver = 10;
+	public static final int HQtoSpawnedBeaver = 100;
 	
 	public static final int bestOreFieldLoc = 11;
 	public static final int bestOreFieldAmount = 12;

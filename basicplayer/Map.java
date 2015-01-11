@@ -1,11 +1,14 @@
 package basicplayer;
 
+import java.util.ArrayList;
 import java.util.Random;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
+import battlecode.common.RobotType;
 import battlecode.common.Team;
 import battlecode.common.TerrainTile;
 
@@ -24,18 +27,9 @@ public class Map {
 	static Direction[] directions = RobotPlayer.directions;
 
 
-	public static int locToInt(MapLocation loc) {
-		
-		System.out.println(loc);
-		String.format("%05d", loc.x);
-		int coords = Integer.parseInt(String.format("%05d", loc.x) + String.format("%05d", loc.y));
-		return coords;
-	}
-	
-	public static MapLocation intToLoc(int i){ //problem when both coords are negative
-		//System.out.println(new MapLocation((i/100000)%100000,i%100000) + "is the decoded map location");
-		
-		return new MapLocation((i/100000)%100000,i%100000);
+	public static int strategize() {
+		// TODO Find HQ distances from each other, void/normal ratio, casualties (rushing or not)
+		return 0;
 	}
 	
     // This method will attempt to move in Direction d (or as close to it as possible)
@@ -68,8 +62,9 @@ public class Map {
 	}
 	
 	public static void randomMove() throws GameActionException {
-		if (rand.nextDouble() < .5) {
-			if (rand.nextDouble() < .5) {
+		double n = rand.nextDouble();
+		if ( n < .5) {
+			if (n < .25) {
 				facing = facing.rotateLeft();
 			} else {
 				facing = facing.rotateRight();
@@ -111,6 +106,19 @@ public class Map {
 		}
 	}
 
+	public static int locToInt(MapLocation loc) {
+		
+		System.out.println(loc);
+		String.format("%05d", loc.x);
+		int coords = Integer.parseInt(String.format("%05d", loc.x) + String.format("%05d", loc.y));
+		return coords;
+	}
+	
+	public static MapLocation intToLoc(int i){ //problem when both coords are negative
+		//System.out.println(new MapLocation((i/100000)%100000,i%100000) + "is the decoded map location");
+		
+		return new MapLocation((i/100000)%100000,i%100000);
+	}
 
 	static int directionToInt(Direction d) {
 		switch(d) {
@@ -134,4 +142,15 @@ public class Map {
 				return -1;
 		}
 	}
+
+	public static int nearbyRobots(RobotInfo[] neighbors, RobotType type) {
+		int num = 0;
+		for (RobotInfo x: neighbors) {
+			if (x.type == type) {
+				num += 1;
+			}
+		}
+		return num;
+	}
+
 }

@@ -28,10 +28,12 @@ public class Army {
 
 	public static void runBarracks() throws GameActionException {
 		if (rc.isCoreReady()) {
-			if (rc.getTeamOre() > RobotType.SOLDIER.oreCost && Clock.getRoundNum() < 1000) {
-				RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.SOLDIER);				
-			} else {
-				RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.BASHER);
+			if (Clock.getRoundNum() > 400) {
+				if (rc.getTeamOre() > RobotType.SOLDIER.oreCost) {
+					RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.SOLDIER);				
+				} else if (rc.getTeamOre() > RobotType.BASHER.oreCost){
+					RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.BASHER);
+				}
 			}
 		}
 	}
@@ -45,7 +47,7 @@ public class Army {
 			rc.broadcast(Comms.casualties, deaths + 1);
 		} //I haven't used this yet TODO
 		
-		RobotPlayer.goProspecting();
+		Ore.goProspecting();
 	}
 
 	public static void runBasher() throws GameActionException {
@@ -79,7 +81,8 @@ public class Army {
 			} else {
 				MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
 				if (enemyTowers.length > 0) {
-					Map.tryMove(enemyTowers[0]);					
+					Map.tryMove(enemyTowers[0]); //if the towers are spread out
+					//attack the closest one if they're all together TODO
 				}else {
 					Map.tryMove(enemyHQ);
 				}

@@ -22,7 +22,10 @@ public class Attack {
 
 	public static void enemyZero() throws GameActionException {
 		if (rc.isWeaponReady()) {
-			RobotPlayer.attackEnemyZero();
+			RobotInfo[] enemies = rc.senseNearbyRobots(myRange, enemyTeam);
+			if (enemies.length > 0) {
+				rc.attackLocation(enemies[0].location);
+			}
 		}
 	}
 	
