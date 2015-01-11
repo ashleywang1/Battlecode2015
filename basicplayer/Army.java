@@ -2,13 +2,7 @@ package basicplayer;
 
 import java.util.Random;
 
-import battlecode.common.Clock;
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
-import battlecode.common.RobotType;
-import battlecode.common.Team;
+import battlecode.common.*;
 
 public class Army {
 	
@@ -39,7 +33,8 @@ public class Army {
 	}
 
 	public static void runSoldier() throws GameActionException {
-		Attack.enemyZero();
+		RobotInfo [] enemies = Attack.getEnemiesInAttackingRange(RobotType.SOLDIER);
+		Attack.lowestHP(enemies);
 		rallyRush();
 		
 		if (rc.getHealth() == 0) {
@@ -72,6 +67,8 @@ public class Army {
 	
 	public static void rallyRush() throws GameActionException {
 		
+		int strategy = rc.readBroadcast(200);
+				
 		int rushOver = rc.readBroadcast(Comms.rushOver);
 		
 		if (rc.isCoreReady()) {
@@ -80,11 +77,17 @@ public class Army {
 				Map.randomMove();
 			} else {
 				MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
-				if (enemyTowers.length > 0) {
-					Map.tryMove(enemyTowers[0]); //if the towers are spread out
-					//attack the closest one if they're all together TODO
-				}else {
-					Map.tryMove(enemyHQ);
+				if(strategy==1){
+					if (enemyTowers.length > 0) {
+						Map.tryMove(enemyTowers[0]); //if the towers are spread out
+						//attack the closest one if they're all together TODO
+						Attack.attackTower();
+					}else {
+						Map.tryMove(enemyHQ);
+					}
+				}else{
+					Map.randomMove();
+					//defend TODO
 				}
 			}		
 		}

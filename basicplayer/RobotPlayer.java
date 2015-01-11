@@ -6,6 +6,9 @@ import java.util.Random;
 import battlecode.common.*;
 
 public class RobotPlayer {
+	public static int strategy; // 0 = "defend", 1 = attack (maybe choose between building drones and soldiers later
+	static int towerThreat;
+	public static int xMin, xMax, yMin, yMax;
 	static RobotController rc;
 	static Team myTeam;
 	static MapLocation myHQ;
@@ -54,7 +57,7 @@ public class RobotPlayer {
         		} else if (rc.getType() == RobotType.BEAVER) {
         			runBeaver();
         		} else if(rc.getType()==RobotType.TOWER){
-        			Attack.enemyZero();
+        			Attack.lowestHP(Attack.getEnemiesInAttackingRange(RobotType.TOWER));
         		} else if (rc.getType() == RobotType.MINERFACTORY) { //MINING units
         			Ore.runMinerFactory();
         		} else if (rc.getType() == RobotType.MINER) {
@@ -98,6 +101,9 @@ public class RobotPlayer {
         		}
         		*/
         		transferSupplies();
+        		analyzeTowers();
+        		if(Clock.getRoundNum()>1000)
+        		chooseStrategy();
         		
             } catch (Exception e) {
                 System.out.println("Unexpected exception");
@@ -358,6 +364,37 @@ public class RobotPlayer {
         if(suppliesToThisLocation!=null){
             rc.transferSupplies((int)transferAmount, suppliesToThisLocation);
         }
+    }
+	
+    //analyze how close towers are to each other
+    public static void analyzeTowers() {
+        MapLocation[] towers = rc.senseEnemyTowerLocations();
+        towerThreat = 0;
+
+        for (int i=0; i<towers.length; ++i) {
+            MapLocation towerLoc = towers[i];
+
+            if ((xMin <= towerLoc.x && towerLoc.x <= xMax && yMin <= towerLoc.y && towerLoc.y <= yMax) || towerLoc.distanceSquaredTo(rc.senseEnemyHQLocation()) <= 50) {
+                for (int j=0; j<towers.length; ++j) {
+                    if (towers[j].distanceSquaredTo(towerLoc) <= 50) {
+                        towerThreat++;
+                    }
+                }
+            }
+        }
+    }
+    
+    //choose strategy based on tower threat
+    public static void chooseStrategy() throws GameActionException {
+        if (towerThreat >= 10) {
+            //play defensive
+            strategy = 0;
+        }
+        else {
+            strategy = 1;
+            }
+        
+        rc.broadcast(200, strategy);
     }
 
 }
