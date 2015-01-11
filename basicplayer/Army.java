@@ -36,6 +36,9 @@ public class Army {
 				}
 			}
 		}
+	      
+        RobotPlayer.requestSupply();
+
 	}
 
 	public static void runSoldier() throws GameActionException {
@@ -48,6 +51,8 @@ public class Army {
 		} //I haven't used this yet TODO
 		
 		Ore.goProspecting();
+		
+		RobotPlayer.requestSupplyForGroup();
 	}
 
 	public static void runBasher() throws GameActionException {

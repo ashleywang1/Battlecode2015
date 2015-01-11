@@ -49,6 +49,8 @@ public class Ore {
 			if (success) {
 				rc.broadcast(Comms.minerCount, numMiners + 1);			
 			}
+		     
+	        RobotPlayer.requestSupply();
 		}
 		
 		//if under attack, broadcast for help
@@ -56,6 +58,7 @@ public class Ore {
 			int numMF = rc.readBroadcast(Comms.miningfactoryCount);
 			rc.broadcast(Comms.miningfactoryCount, numMF - 1);
 		}
+
 	}
 
 
@@ -95,6 +98,8 @@ public class Ore {
 				
 			}
 		}
+		
+		RobotPlayer.requestSupplyForGroup();
 		
 	}
 	
