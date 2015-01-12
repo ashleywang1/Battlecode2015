@@ -8,6 +8,7 @@ public class Comms {
 	public static final int basherCount = 3;
 	public static final int barracksCount = 4;
 	public static final int tankfactoryCount = 104;
+	public static final int tanksCount = 105;
 	public static final int minerCount = 5;
 	public static final int miningfactoryCount = 6;
 	public static final int supplydepotCount = 7;
@@ -28,8 +29,9 @@ public class Comms {
 	
 	
 	//Army information
-	public static final int rushOver = 14;
-	public static final int casualties = 15;
+	public static final int rushOver = 300;
+	public static final int rushStartRound = 301;
+	public static final int casualties = 302;
 	
 	//Supply information
 	public static final int lowestBarracksSupply = 16;

@@ -69,7 +69,7 @@ public class Map {
 		}
 	}
 	
-	public static void randomMove() throws GameActionException {
+	public static void carelessMove() throws GameActionException {
 		double n = rand.nextDouble();
 		if ( n < .5) {
 			if (n < .25) {
@@ -89,6 +89,35 @@ public class Map {
 		}
 		if (rc.isCoreReady() && rc.canMove(facing)) {
 			rc.move(facing);
+		}
+	}
+	
+	
+	public static void randomMove() throws GameActionException {
+		RobotInfo[] threats = rc.senseNearbyRobots(myRange, enemyTeam);
+		int harmless = nearbyRobots(threats, RobotType.MINER);
+		
+		//check that the direction in front is not a tile that can be attacked by the enemy towers
+		MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
+		boolean tileInFrontSafe = true;
+		MapLocation tileInFront = rc.getLocation().add(facing);
+		for(MapLocation m: enemyTowers){
+			if(m.distanceSquaredTo(tileInFront)<=RobotType.TOWER.attackRadiusSquared + 9){
+				tileInFrontSafe = false;
+				break;
+			}
+		}
+		
+		if ((threats.length - harmless) > 1) {
+			Direction away = threats[0].location.directionTo(myHQ);
+			if (rc.isCoreReady() && rc.canMove(away)) {
+				rc.move(away);
+			}
+		} else if(rc.senseTerrainTile(tileInFront)!=TerrainTile.NORMAL||!tileInFrontSafe){ 
+				facing = facing.rotateLeft();
+			}
+		else {
+			carelessMove();
 		}
 	}
 	

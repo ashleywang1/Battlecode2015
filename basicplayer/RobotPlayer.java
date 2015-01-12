@@ -128,7 +128,9 @@ public class RobotPlayer {
 	private static void runHQ() throws GameActionException {
 		
 		boolean spawnSuccess = false;
-		int strategy = Map.strategize();
+		int strategy = strategize();
+
+        rc.broadcast(200, strategy);
 		
 		Attack.enemyZero();
 		if (rc.isCoreReady()) {
@@ -152,14 +154,9 @@ public class RobotPlayer {
 				}
 			}*/
 			
-			analyzeTowers();
-    		if(Clock.getRoundNum()>1000) {
-    			chooseStrategy();	
-    		}
 		}
 		
 	}
-
 
 	private static void runBeaver() throws GameActionException {
 		Attack.enemyZero();
@@ -507,8 +504,40 @@ public class RobotPlayer {
         }
     }
 	
+	private static int strategize() throws GameActionException {
+		towerThreat = analyzeTowers();
+		int soldiers = rc.readBroadcast(Comms.soldierCount);
+		int bashers = rc.readBroadcast(Comms.basherCount);
+		int tanks = rc.readBroadcast(Comms.tanksCount);
+		int casualties = rc.readBroadcast(Comms.casualties);
+		int army = bashers + tanks - casualties;
+		
+		
+		if(Clock.getRoundNum()>500) {
+			
+			if (towerThreat >= 10 && army < (25 + 2*towerThreat)) {
+	            //play defensive
+	            strategy = 0;
+	        }
+	        else {
+	            strategy = 1;
+	            rc.broadcast(Comms.rushOver, 0);
+	            int start = rc.readBroadcast(Comms.rushStartRound);
+	            if (start == 0) {
+	            	rc.broadcast(Comms.rushStartRound, Clock.getRoundNum());
+	            }
+	            }
+		}
+		
+
+		//System.out.println(army + "is the army size, towerTHreat = " + towerThreat);
+		//System.out.println("strategy is : " + strategy);
+		
+		return strategy;
+	}
+	
     //analyze how close towers are to each other
-    public static void analyzeTowers() {
+    public static int analyzeTowers() {
         MapLocation[] towers = rc.senseEnemyTowerLocations();
         towerThreat = 0;
 
@@ -524,6 +553,7 @@ public class RobotPlayer {
                 }
             }
         }
+        return towerThreat;
     }
     
     //choose strategy based on tower threat
