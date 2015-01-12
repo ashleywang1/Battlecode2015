@@ -29,6 +29,16 @@ public class Comms {
 	public static final int rushOver = 13;
 	public static final int casualties = 14;
 	
+	//Supply information
+	public static final int lowestBarracksSupply = 15;
+	public static final int lowestBarracksSupplyLoc = 16;
+	public static final int lowestMiningFactorySupply = 17;
+	public static final int lowestMiningFactorySupplyLoc = 18;
+	public static final int lowestSoldierSupply = 19;
+	public static final int lowestSoldierSupplyLoc = 20;
+	public static final int lowestMinerSupply = 21;
+	public static final int lowestMinerSupplyLoc = 22;
+	
 	//robot ID channel
 	//All 4 digit broadcasting channels are reserved for robot ID channels. (ID - fist digit)
 	//A robot can broadcast to and read from the channel corresponding to its ID's first 4 digits. This is used to preserve memory between rounds.
