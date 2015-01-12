@@ -45,7 +45,8 @@ public class RobotPlayer {
 		
 		if (rc.getType() == RobotType.BEAVER) {
 			int assignment = rc.readBroadcast(Comms.HQtoSpawnedBeaver);
-			rc.broadcast(Comms.memory(rc.getID()), assignment);
+			MapLocation destination = myTowers[assignment];
+			rc.broadcast(Comms.memory(rc.getID()), Map.locToInt(destination));
 			//System.out.println(rc.getID()%10000 + " is my own personall channel id");
 		}
 		
@@ -160,6 +161,7 @@ public class RobotPlayer {
 		Attack.enemyZero();
 		if (rc.isCoreReady()) {
 			economyStrategy();
+			//centerStrategy(); //the only difference is you rally around the center
 			//techStrategy();
 			//basicStrategy();
 			//miningStrategy();
@@ -206,12 +208,32 @@ public class RobotPlayer {
 		//1 MF right next to HQ
 		// shut down enemy soldiers
 		rc.broadcast(Comms.maxBeavers, 20);
+		
+		
 		int MFnum = rc.readBroadcast(Comms.miningfactoryCount);
+		int numBarracks = rc.readBroadcast(Comms.barracksCount);
+		boolean set = false;
+		if (!set) {
+			set = setRallyCenter();
+		}
 		
 		if (MFnum == 0) {
 			becomeHQMiningFactory(MFnum);
+		} else if (numBarracks < 2)  //minerfactory
+			becomeBarracks();
+		else if (MFnum < 2 )  //barracks
+			becomeMiningFactory(MFnum);
+		else {
+			becomeTankFactory();
 		}
 		
+	}
+
+
+	private static boolean setRallyCenter() throws GameActionException {
+		MapLocation center = new MapLocation((myHQ.x + enemyHQ.x)/2, (myHQ.y + enemyHQ.y)/2);
+		rc.broadcast(Comms.memory(rc.getID()), Map.locToInt(center));
+		return true;
 	}
 
 	private static void techStrategy() throws GameActionException {
@@ -248,7 +270,6 @@ public class RobotPlayer {
 		int numBarracks = rc.readBroadcast(Comms.barracksCount);
 		
 		//2 mining factories is optimal
-		int assignment = rc.readBroadcast(Comms.memory(rc.getID()));
 		
 		if (MFnum == 0) {
 			becomeHQMiningFactory(MFnum);
@@ -274,8 +295,6 @@ public class RobotPlayer {
 		} else {
 			Map.randomMove();
 		}
-		
-		
 	}
 
 	private static void becomeBarracks() throws GameActionException {
@@ -285,18 +304,21 @@ public class RobotPlayer {
 		
 		int nearbyTowers = Map.nearbyRobots(neighbors, RobotType.TOWER);
 		int nearbyBarracks = Map.nearbyRobots(neighbors, RobotType.BARRACKS);
+		int dest = rc.readBroadcast(Comms.memory(rc.getID()));
+		MapLocation destination = Map.intToLoc(dest);
+		MapLocation myLoc = rc.getLocation();
 
-		if (nearbyTowers > 0 && nearbyBarracks == 0 && rc.getTeamOre() >= 300) {
-			Direction toEnemy = rc.getLocation().directionTo(enemyHQ);
+		if (nearbyBarracks == 0 && rc.getTeamOre() >= 300 && myLoc.distanceSquaredTo(destination) < 10) { 
+			Direction toEnemy = myLoc.directionTo(enemyHQ);
 			spawnSuccess = tryBuild(toEnemy,RobotType.BARRACKS);
 			if (spawnSuccess) {
 				int numBarracks = rc.readBroadcast(Comms.barracksCount);
 				rc.broadcast(Comms.barracksCount, numBarracks + 1);
 			}
 		} else {
-			int n = rc.readBroadcast(Comms.memory(rc.getID()));
-			if (rc.getLocation().distanceSquaredTo(myTowers[n]) > 10) { //move to assigned tower
-				Map.tryMove(myTowers[n]);
+			
+			if (myLoc.distanceSquaredTo(destination) > 10) { //move to assigned tower
+				Map.tryMove(destination);
 			} else {
 				beaverMine();
 			}

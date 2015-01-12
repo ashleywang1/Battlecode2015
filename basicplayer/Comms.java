@@ -23,25 +23,26 @@ public class Comms {
 	
 	public static final int bestOreFieldLoc = 11;
 	public static final int bestOreFieldAmount = 12;
+	public static int bestOreFieldDistance = 13;
 	
 	
 	//Army information
-	public static final int rushOver = 13;
-	public static final int casualties = 14;
+	public static final int rushOver = 14;
+	public static final int casualties = 15;
 	
 	//Supply information
-	public static final int lowestBarracksSupply = 15;
-	public static final int lowestBarracksSupplyLoc = 16;
-	public static final int lowestMiningFactorySupply = 17;
-	public static final int lowestMiningFactorySupplyLoc = 18;
-	public static final int lowestSoldierSupply = 19;
-	public static final int lowestSoldierSupplyLoc = 20;
-	public static final int lowestMinerSupply = 21;
-	public static final int lowestMinerSupplyLoc = 22;
+	public static final int lowestBarracksSupply = 16;
+	public static final int lowestBarracksSupplyLoc = 17;
+	public static final int lowestMiningFactorySupply = 18;
+	public static final int lowestMiningFactorySupplyLoc = 19;
+	public static final int lowestSoldierSupply = 20;
+	public static final int lowestSoldierSupplyLoc = 21;
+	public static final int lowestMinerSupply = 22;
+	public static final int lowestMinerSupplyLoc = 23;
 	
 	
 	//strategy
-	public static int maxBeavers = 23;
+	public static int maxBeavers = 24;
 	
 	//robot ID channel
 	//All 4 digit broadcasting channels are reserved for robot ID channels. (ID - fist digit)

@@ -80,17 +80,18 @@ public class Ore {
 					minerMove(myLoc);	
 				} else {
 					Direction away = miner.directionTo(myLoc);
-					double p = rand.nextDouble();
+					Map.tryMove(away); //move away from others
+					/*double p = rand.nextDouble();
 					if (p < .9) {
-						Map.tryMove(away); //move away from others					
-					}
+											
+					}*/
 					/*else if (p < .8) {
 						Map.tryMove(away.rotateLeft().rotateLeft());
 					} else if (p < .9) {
 						Map.tryMove(away.rotateRight().rotateRight());
-					}*/ else {
+					} else {
 						rc.mine();
-					}
+					}*/
 				}				
 			} else if ((enemies.length - minerEnemies) > 0) {
 				Map.tryMove(enemies[0].location.directionTo(myLoc)); //move away from others
@@ -118,8 +119,8 @@ public class Ore {
 		double left = rc.senseOre(myLoc.add(facing.rotateLeft()));
 		if (oreLoc != 0) {
 			MapLocation oreField = Map.intToLoc(oreLoc);
-			System.out.println(oreField + "is where I'm going");
-			Map.wanderToward(myLoc.directionTo(oreField), .8);			
+			//System.out.println(oreField + "is where I'm going");
+			Map.tryMove(myLoc.directionTo(oreField));			
 		}
 		else {
 			Map.randomMove();
@@ -152,20 +153,23 @@ public class Ore {
 		//eventually once this region dries up, change the best ore field
 		
 		int maxOre = Math.max(rc.readBroadcast(Comms.bestOreFieldAmount), 20);
-		double ore = rc.senseOre(rc.getLocation());
+		int oreDistance = rc.readBroadcast(Comms.bestOreFieldDistance);
+		MapLocation myLoc = (rc.getLocation());
+		int myDistance = myLoc.distanceSquaredTo(myHQ);
+		double ore = surroundingOre(myLoc);
 		int loc = rc.readBroadcast(Comms.bestOreFieldLoc);
 		MapLocation mapCoords = Map.intToLoc(loc);
-		MapLocation myLoc = rc.getLocation();
 		
-		if (ore > maxOre) {
+		if (ore > maxOre*9 && myDistance > oreDistance) {
 			
-			int coords = Map.locToInt(rc.getLocation());			
+			int coords = Map.locToInt(rc.getLocation());
 			System.out.println("HEY FOUND BETTER" + coords); //TODO
 			rc.broadcast(Comms.bestOreFieldLoc, coords);
-			rc.broadcast(Comms.bestOreFieldAmount, (int) ore);
-		} else if (myLoc.equals(mapCoords) && rc.senseOre(myLoc) < 12) {
+			rc.broadcast(Comms.bestOreFieldAmount, (int) (ore/9.0) );
+		} else if (myLoc.equals(mapCoords) && rc.senseOre(myLoc) < maxOre*9) {
 			rc.broadcast(Comms.bestOreFieldAmount, 0);
 			rc.broadcast(Comms.bestOreFieldLoc, 0);
+			System.out.println("find another minefield");
 		}
 		
 	}
