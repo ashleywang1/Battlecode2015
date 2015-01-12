@@ -22,7 +22,7 @@ public class Army {
 
 	public static void runBarracks() throws GameActionException {
 		if (rc.isCoreReady()) {
-			if (Clock.getRoundNum() > 400) {
+			if (Clock.getRoundNum() > 200) {
 				if (rc.getTeamOre() > RobotType.SOLDIER.oreCost) {
 					RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.SOLDIER);				
 				} else if (rc.getTeamOre() > RobotType.BASHER.oreCost){

@@ -9,6 +9,7 @@ public class RobotPlayer {
 	public static int strategy; // 0 = "defend", 1 = attack (maybe choose between building drones and soldiers later
 	static int towerThreat;
 	public static int xMin, xMax, yMin, yMax;
+	public static int mapXsign, mapYsign;
 	static RobotController rc;
 	static Team myTeam;
 	static MapLocation myHQ;
@@ -38,6 +39,9 @@ public class RobotPlayer {
 		enemyTeam = myTeam.opponent();
 		enemyHQ = rc.senseEnemyHQLocation();
 		enemyTowers = rc.senseEnemyTowerLocations();
+		
+		mapXsign = Integer.signum(myHQ.x);
+		mapYsign = Integer.signum(myHQ.y);
 		
 		if (rc.getType() == RobotType.BEAVER) {
 			int assignment = rc.readBroadcast(Comms.HQtoSpawnedBeaver);
@@ -134,8 +138,8 @@ public class RobotPlayer {
 			if (Clock.getRoundNum() < 100 && rc.getTeamOre() >= 100 && numBeavers < maxBeavers) {
 				spawnSuccess = trySpawn(directions[rand.nextInt(8)], RobotType.BEAVER);
 				if (spawnSuccess) {
-					//int assignment = rc.readBroadcast(Comms.HQtoSpawnedBeaver);
-					rc.broadcast(Comms.HQtoSpawnedBeaver, numBeavers);
+					
+					rc.broadcast(Comms.HQtoSpawnedBeaver, Math.min(numBeavers, myTowers.length - 1));
 					rc.broadcast(Comms.beaverCount, numBeavers + 1);
 				}
 			}
@@ -253,14 +257,24 @@ public class RobotPlayer {
 		else if (MFnum < 2 )  //barracks
 			becomeMiningFactory(MFnum);
 		else {
+			becomeTankFactory();
+		}
+		
+		Ore.goProspecting();
+		
+	}
+
+	private static void becomeTankFactory() throws GameActionException {
+		if (rc.senseNearbyRobots(myRange).length < 3) {
 			if (rc.getTeamOre() > RobotType.TANKFACTORY.oreCost) {
 				//add dependency condition TODO
 				tryBuild(directions[rand.nextInt(8)], RobotType.TANKFACTORY);
 				//add count to Comms TODO
-			}
+			}	
+		} else {
+			Map.randomMove();
 		}
 		
-		Ore.goProspecting();
 		
 	}
 

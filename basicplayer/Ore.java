@@ -35,7 +35,7 @@ public class Ore {
 		int round = Clock.getRoundNum();
 		if (rc.isCoreReady() && numMiners < 80 && 
 				((rc.getTeamOre() >= RobotType.MINER.oreCost && round < 400) || 
-						(rc.getTeamOre() >= RobotType.MINER.oreCost + 300))) {
+						(rc.getTeamOre() >= RobotType.MINER.oreCost + 200))) {
 			int oreFields = rc.readBroadcast(Comms.bestOreFieldLoc);
 			
 			if (oreFields == 0) {
@@ -65,11 +65,10 @@ public class Ore {
 	public static void runMiner() throws GameActionException {
 		
 		MapLocation spawnPoint;
-		RobotInfo[] enemies;
-		RobotInfo[] allies;
 		
-		enemies = rc.senseNearbyRobots(myRange, enemyTeam);
-		allies = rc.senseNearbyRobots(myRange-2, myTeam);
+		RobotInfo[] enemies = rc.senseNearbyRobots(myRange, enemyTeam);
+		int minerEnemies = Map.nearbyRobots(enemies, RobotType.MINER);
+		RobotInfo[] allies = rc.senseNearbyRobots(myRange-2, myTeam);
 		//avoid enemies, tolerate allies to 3
 		//walls = rc.senseTerrainTile(rc.getLocation());
 		
@@ -81,21 +80,29 @@ public class Ore {
 					minerMove(myLoc);	
 				} else {
 					Direction away = miner.directionTo(myLoc);
-					if (rand.nextDouble() < .9) {
+					double p = rand.nextDouble();
+					if (p < .9) {
 						Map.tryMove(away); //move away from others					
-					} else if (rand.nextDouble() < .95) {
+					}
+					/*else if (p < .8) {
 						Map.tryMove(away.rotateLeft().rotateLeft());
-					} else {
+					} else if (p < .9) {
 						Map.tryMove(away.rotateRight().rotateRight());
+					}*/ else {
+						rc.mine();
 					}
 				}				
-			} else if (enemies.length > 0) {
+			} else if ((enemies.length - minerEnemies) > 0) {
 				Map.tryMove(enemies[0].location.directionTo(myLoc)); //move away from others
 			} else if (rc.senseOre(myLoc) > 12) {
-				rc.mine();
+				if (rand.nextDouble() < .8) {
+					rc.mine();	
+				} else {
+					Map.tryMove(facing);
+				}
+				
 			} else {
 				minerMove(myLoc);
-				
 			}
 		}
 		
@@ -111,7 +118,8 @@ public class Ore {
 		double left = rc.senseOre(myLoc.add(facing.rotateLeft()));
 		if (oreLoc != 0) {
 			MapLocation oreField = Map.intToLoc(oreLoc);
-			Map.tryMove(myLoc.directionTo(oreField));			
+			System.out.println(oreField + "is where I'm going");
+			Map.wanderToward(myLoc.directionTo(oreField), .8);			
 		}
 		else {
 			Map.randomMove();

@@ -25,6 +25,8 @@ public class Map {
 	
 	static Random rand = RobotPlayer.rand;
 	static Direction[] directions = RobotPlayer.directions;
+	static int mapXsign = RobotPlayer.mapXsign;
+	static int mapYsign = RobotPlayer.mapYsign;
 
 
 	public static int strategize() {
@@ -54,7 +56,11 @@ public class Map {
 		int dirint = directionToInt(d);
 		
 		while (offsetIndex < 5 && !rc.canMove(directions[(dirint+offsets[offsetIndex]+8)%8])) {
-			offsetIndex++;
+			if (mapXsign < 0) { //make it more even
+				offsetIndex++;	
+			} else {
+				offsetIndex --;
+			}
 		}
 		if (offsetIndex < 5) {
 			rc.move(directions[(dirint+offsets[offsetIndex]+8)%8]);
@@ -108,16 +114,14 @@ public class Map {
 
 	public static int locToInt(MapLocation loc) {
 		
-		System.out.println(loc);
-		String.format("%05d", loc.x);
-		int coords = Integer.parseInt(String.format("%05d", loc.x) + String.format("%05d", loc.y));
+		int coords = Integer.parseInt(String.format("%05d", Math.abs(loc.x)) + String.format("%05d", Math.abs(loc.y)));
 		return coords;
 	}
 	
 	public static MapLocation intToLoc(int i){ //problem when both coords are negative
 		//System.out.println(new MapLocation((i/100000)%100000,i%100000) + "is the decoded map location");
 		
-		return new MapLocation((i/100000)%100000,i%100000);
+		return new MapLocation((i/100000)%100000*mapXsign,i%100000*mapYsign);
 	}
 
 	static int directionToInt(Direction d) {
