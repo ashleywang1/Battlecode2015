@@ -31,7 +31,7 @@ public class Army {
 			}
 		}
 	      
-        RobotPlayer.requestSupply();
+        Supply.requestSupply();
 
 	}
 
@@ -47,7 +47,6 @@ public class Army {
 		
 		Ore.goProspecting();
 		
-		RobotPlayer.requestSupplyForGroup();
 	}
 
 	public static void runBasher() throws GameActionException {
@@ -90,6 +89,7 @@ public class Army {
 					}else {
 						Map.tryMove(enemyHQ);
 					}
+					Supply.requestSupplyForGroup();
 				}else{
 					Map.randomMove();
 					//defend TODO

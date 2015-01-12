@@ -50,7 +50,7 @@ public class Ore {
 				rc.broadcast(Comms.minerCount, numMiners + 1);			
 			}
 		     
-	        RobotPlayer.requestSupply();
+	        Supply.requestSupply();
 		}
 		
 		//if under attack, broadcast for help
@@ -107,7 +107,7 @@ public class Ore {
 			}
 		}
 		
-		RobotPlayer.requestSupplyForGroup();
+		Supply.requestSupplyForGroup();
 		
 	}
 	
@@ -163,13 +163,13 @@ public class Ore {
 		if (ore > maxOre*9 && myDistance > oreDistance) {
 			
 			int coords = Map.locToInt(rc.getLocation());
-			System.out.println("HEY FOUND BETTER" + coords); //TODO
+			//System.out.println("HEY FOUND BETTER" + coords); //TODO
 			rc.broadcast(Comms.bestOreFieldLoc, coords);
 			rc.broadcast(Comms.bestOreFieldAmount, (int) (ore/9.0) );
 		} else if (myLoc.equals(mapCoords) && rc.senseOre(myLoc) < maxOre*9) {
 			rc.broadcast(Comms.bestOreFieldAmount, 0);
 			rc.broadcast(Comms.bestOreFieldLoc, 0);
-			System.out.println("find another minefield");
+			//System.out.println("find another minefield");
 		}
 		
 	}

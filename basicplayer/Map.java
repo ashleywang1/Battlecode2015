@@ -54,16 +54,18 @@ public class Map {
 		boolean blocked = false;
 		Direction d = rc.getLocation().directionTo(loc);
 		int dirint = directionToInt(d);
+		double prob = rand.nextDouble();
+		int sign = 1;
 		
-		while (offsetIndex < 5 && !rc.canMove(directions[(dirint+offsets[offsetIndex]+8)%8])) {
-			if (mapXsign < 0) { //make it more even
-				offsetIndex++;	
-			} else {
-				offsetIndex --;
-			}
+		if (prob < .5) {
+			sign = -1;
+		}
+		
+		while (offsetIndex < 5 && !rc.canMove(directions[(dirint+sign*offsets[offsetIndex]+8)%8])) {
+			offsetIndex++;
 		}
 		if (offsetIndex < 5) {
-			rc.move(directions[(dirint+offsets[offsetIndex]+8)%8]);
+			rc.move(directions[(dirint+sign*offsets[offsetIndex]+8)%8]);
 		}
 	}
 	

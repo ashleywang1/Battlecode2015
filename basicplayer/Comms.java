@@ -7,6 +7,7 @@ public class Comms {
 	public static final int soldierCount = 2;
 	public static final int basherCount = 3;
 	public static final int barracksCount = 4;
+	public static final int tankfactoryCount = 104;
 	public static final int minerCount = 5;
 	public static final int miningfactoryCount = 6;
 	public static final int supplydepotCount = 7;
