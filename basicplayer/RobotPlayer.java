@@ -113,6 +113,7 @@ public class RobotPlayer {
         			runLauncher();
         		}
         		*/
+                detectEnemies();
         		transferSupplies();
         		
         		
@@ -122,6 +123,14 @@ public class RobotPlayer {
             }
 			
 			rc.yield();
+		}
+	}
+
+	private static void detectEnemies() {
+		if (Clock.getRoundNum() < 300) {
+			if (rc.senseNearbyRobots(myRange, enemyTeam).length > 0) {
+				//broadcast that we're on the FULL defensive
+			}
 		}
 	}
 
@@ -144,15 +153,11 @@ public class RobotPlayer {
 					rc.broadcast(Comms.HQtoSpawnedBeaver, Math.min(numBeavers, myTowers.length - 1));
 					rc.broadcast(Comms.beaverCount, numBeavers + 1);
 				}
-			}
-			/*else if (rc.getTeamOre() >= 100 && numBeavers < 10){
-				spawnSuccess = trySpawn(directions[rand.nextInt(8)], RobotType.BEAVER);
-				if (spawnSuccess) {
-					
-					rc.broadcast(Comms.HQtoSpawnedBeaver, rand.nextInt(myTowers.length));
-					rc.broadcast(Comms.beaverCount, numBeavers + 1);
+			} else if (rc.readBroadcast(Comms.spawnBeaver) == 1) {
+				if (trySpawn(directions[rand.nextInt(8)], RobotType.BEAVER)) {
+					rc.broadcast(Comms.spawnBeaver, 0);
 				}
-			}*/
+			}
 			
 		}
 		
@@ -248,7 +253,6 @@ public class RobotPlayer {
 		else {
 			becomeTankFactory();
 		}
-		
 		
 	}
 	

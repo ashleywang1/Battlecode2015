@@ -46,6 +46,7 @@ public class Comms {
 	
 	//strategy
 	public static int maxBeavers = 24;
+	public static int spawnBeaver = 25;
 	
 	//robot ID channel
 	//All 4 digit broadcasting channels are reserved for robot ID channels. (ID - fist digit)

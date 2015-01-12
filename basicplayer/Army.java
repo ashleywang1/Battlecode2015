@@ -43,7 +43,7 @@ public class Army {
 
 	public static void runSoldier() throws GameActionException {
 		RobotInfo [] enemies = Attack.getEnemiesInAttackingRange(RobotType.SOLDIER);
-		Attack.lowestHP(enemies);
+		Attack.attackTower();
 		rallyRush();
 		
 		if (rc.getHealth() < 1) {
@@ -93,13 +93,20 @@ public class Army {
 				MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
 				if(strategy==1){
 					int rushStart = rc.readBroadcast(Comms.rushStartRound);
+					//set destination
+					MapLocation destination = enemyHQ;
 					if (enemyTowers.length > 0) {
-						Map.tryMove(enemyTowers[0]); //if the towers are spread out
+						destination = enemyTowers[0];
 						//attack the closest one if they're all together TODO
-						Attack.attackTower();
-					}else {
-						Map.tryMove(enemyHQ);
 					}
+					
+					//rally around the destination then move
+					if (rc.getLocation().distanceSquaredTo(destination) > RobotType.TOWER.attackRadiusSquared + 9 ||
+							rc.senseNearbyRobots(myRange,myTeam).length > 3) {
+						Map.tryMove(destination);	
+					}
+					
+					
 					if (Clock.getRoundNum() > rushStart + 200) {
 						checkRushOver();	
 					}
