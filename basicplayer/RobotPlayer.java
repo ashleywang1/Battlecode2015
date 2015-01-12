@@ -246,7 +246,9 @@ public class RobotPlayer {
 		//2 mining factories is optimal
 		int assignment = rc.readBroadcast(Comms.memory(rc.getID()));
 		
-		if (numBarracks < 2)  //minerfactory
+		if (MFnum == 0) {
+			becomeHQMiningFactory(MFnum);
+		} else if (numBarracks < 2)  //minerfactory
 			becomeBarracks();
 		else if (MFnum < 2 )  //barracks
 			becomeMiningFactory(MFnum);
