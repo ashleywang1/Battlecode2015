@@ -233,14 +233,15 @@ public class RobotPlayer {
 		
 		if (numBarracks < 2)  //minerfactory
 			becomeBarracks();
-		if (MFnum < 2 )  //barracks
+		else if (MFnum < 2 )  //barracks
 			becomeMiningFactory(MFnum);
-		 
+		else {
 			if (rc.getTeamOre() > RobotType.TANKFACTORY.oreCost) {
 				//add dependency condition TODO
 				tryBuild(directions[rand.nextInt(8)], RobotType.TANKFACTORY);
 				//add count to Comms TODO
 			}
+		}
 		
 		Ore.goProspecting();
 		
