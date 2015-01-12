@@ -39,6 +39,10 @@ public class Comms {
 	public static final int lowestMinerSupply = 21;
 	public static final int lowestMinerSupplyLoc = 22;
 	
+	
+	//strategy
+	public static int maxBeavers = 23;
+	
 	//robot ID channel
 	//All 4 digit broadcasting channels are reserved for robot ID channels. (ID - fist digit)
 	//A robot can broadcast to and read from the channel corresponding to its ID's first 4 digits. This is used to preserve memory between rounds.

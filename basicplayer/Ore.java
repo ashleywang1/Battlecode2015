@@ -129,7 +129,15 @@ public class Ore {
 		return null;
 	}
 
-
+	public static double surroundingOre(MapLocation myLoc) {
+		
+		double ore = rc.senseOre(myLoc);
+		for (Direction dir: directions) {
+			ore += rc.senseOre(myLoc.add(dir));
+		}
+		
+		return ore;
+	}
 
 	public static void goProspecting() throws GameActionException {
 		//TODO eventually don't just judge one square, make it all 16 squares in range

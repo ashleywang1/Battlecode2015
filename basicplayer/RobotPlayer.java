@@ -129,8 +129,9 @@ public class RobotPlayer {
 		Attack.enemyZero();
 		if (rc.isCoreReady()) {
 			int numBeavers = rc.readBroadcast(Comms.beaverCount);
+			int maxBeavers = Math.max(5, rc.readBroadcast(Comms.maxBeavers));
 
-			if (Clock.getRoundNum() < 100 && rc.getTeamOre() >= 100 && numBeavers < 5) {
+			if (Clock.getRoundNum() < 100 && rc.getTeamOre() >= 100 && numBeavers < maxBeavers) {
 				spawnSuccess = trySpawn(directions[rand.nextInt(8)], RobotType.BEAVER);
 				if (spawnSuccess) {
 					//int assignment = rc.readBroadcast(Comms.HQtoSpawnedBeaver);
@@ -193,6 +194,20 @@ public class RobotPlayer {
 		} else {
 		    becomeSuppliers();
 		}
+	}
+	
+	private static void centerStrategy() throws GameActionException {
+		// good for the shield map
+		// create tons of beavers, send to center of the map, beaverMine then barracks
+		//1 MF right next to HQ
+		// shut down enemy soldiers
+		rc.broadcast(Comms.maxBeavers, 20);
+		int MFnum = rc.readBroadcast(Comms.miningfactoryCount);
+		
+		if (MFnum == 0) {
+			becomeHQMiningFactory(MFnum);
+		}
+		
 	}
 
 	private static void techStrategy() throws GameActionException {
@@ -279,7 +294,7 @@ public class RobotPlayer {
 		int oreFieldLoc = rc.readBroadcast(Comms.bestOreFieldLoc);
 		MapLocation myLoc = rc.getLocation();
 		
-		double block = surroundingOre();
+		double block = Ore.surroundingOre(myLoc);
 		//System.out.println(maxOreFound*9 + "is the max ore found???");
 		//System.out.println(block + "at location " + rc.getLocation());
 		if (block >= maxOreFound*9 ) {
@@ -302,6 +317,18 @@ public class RobotPlayer {
 				Direction awayFromHQ = myHQ.directionTo(rc.getLocation());
 				Map.wanderToward(awayFromHQ, .7);
 			}
+		}
+	}
+	
+	private static void becomeHQMiningFactory(int numMiningFactories) throws GameActionException {
+		if (rc.getTeamOre() >= 500) {
+			Direction away = myHQ.directionTo(rc.getLocation());
+			boolean success = tryBuild(away ,RobotType.MINERFACTORY);
+			if (success) {
+				rc.broadcast(Comms.miningfactoryCount, numMiningFactories + 1);
+			}	
+		} else {
+			beaverMine();		
 		}
 	}
 	
@@ -386,16 +413,6 @@ public class RobotPlayer {
 	    } else if (avgSupply > 30 && rc.readBroadcast(supplyLocChannel) == Map.locToInt(currentLoc)) {
 	        rc.broadcast(supplyChannel, 10000);
 	    }
-	}
-	
-	private static double surroundingOre() {
-		MapLocation myLoc = rc.getLocation();
-		double ore = rc.senseOre(myLoc);
-		for (Direction dir: directions) {
-			ore += rc.senseOre(myLoc.add(dir));
-		}
-		
-		return ore;
 	}
 
 	private static void beaverMine() throws GameActionException {
