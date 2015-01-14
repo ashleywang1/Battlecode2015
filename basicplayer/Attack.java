@@ -56,7 +56,8 @@ public class Attack {
     public static void attackTower() throws GameActionException{
     	MapLocation nearbyTower = null;
 		RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(rc.getLocation(), rc.getType().attackRadiusSquared, rc.getTeam().opponent());
-		if(nearbyEnemies.length>0){ //there exists enemies near
+		
+		if(nearbyEnemies.length>0&&rc.isWeaponReady()){ //there exists enemies near
 			//find the first tower and shoot at it
 			for (RobotInfo info : nearbyEnemies) {
         		if (info.type.equals(RobotType.TOWER)) {
@@ -64,8 +65,10 @@ public class Attack {
         			break;
         		}
         	}
-			if(nearbyTower!=null&&rc.isWeaponReady()&&rc.canAttackLocation(nearbyTower)){
+			if(nearbyTower!=null&&rc.canAttackLocation(nearbyTower)){
 				rc.attackLocation(nearbyTower);
+			} else {
+				lowestHP(nearbyEnemies);
 			}
 		}
     }
