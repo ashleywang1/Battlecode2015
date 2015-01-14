@@ -7,7 +7,6 @@ import battlecode.common.*;
 
 public class RobotPlayer {
 	public static int strategy; // 0 = "defend", 1 = attack (maybe choose between building drones and soldiers later
-	static int towerThreat;
 	public static int xMin, xMax, yMin, yMax;
 	public static int mapXsign, mapYsign;
 	static RobotController rc;
@@ -24,6 +23,8 @@ public class RobotPlayer {
 	static Random rand;
 	static Direction[] directions = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST};
 	
+	static int towerThreat;
+	static double navigability;
 	
 	public static void run(RobotController RC) throws GameActionException {
 		rc = RC;
@@ -43,11 +44,14 @@ public class RobotPlayer {
 		mapXsign = Integer.signum(myHQ.x);
 		mapYsign = Integer.signum(myHQ.y);
 		
-		if (rc.getType() == RobotType.BEAVER) {
+		//for the HQ only
+		towerThreat = 0;
+		navigability = 0;
+		
+		if (rc.getType() == RobotType.BEAVER && Clock.getRoundNum() < 500) {
 			int assignment = rc.readBroadcast(Comms.HQtoSpawnedBeaver);
 			MapLocation destination = myTowers[assignment];
 			rc.broadcast(Comms.memory(rc.getID()), Map.locToInt(destination));
-			//System.out.println(rc.getID()%10000 + " is my own personall channel id");
 		}
 		
 		int round = Clock.getRoundNum();
@@ -69,7 +73,7 @@ public class RobotPlayer {
         		} else if (rc.getType() == RobotType.BEAVER) {
         			runBeaver();
         		} else if(rc.getType()==RobotType.TOWER){
-        			Attack.lowestHP(Attack.getEnemiesInAttackingRange(RobotType.TOWER));
+        			runTower();
         		} else if (rc.getType() == RobotType.MINERFACTORY) { //MINING units
         			Ore.runMinerFactory();
         		} else if (rc.getType() == RobotType.MINER) {
@@ -101,19 +105,18 @@ public class RobotPlayer {
         		} else if (rc.getType() == RobotType.COMMANDER) {
         			Tech.runCommander();
         		}
-        		/*
-        		/AIR ARMY units
+        		//AIR ARMY units
         		else if (rc.getType() == RobotType.HELIPAD) {
-        			runHelipad();
+        			AirForce.runHelipad();
         		} else if (rc.getType() == RobotType.DRONE) {
-        			runDrone();
+        			AirForce.runDrone();
         		} else if (rc.getType() == RobotType.AEROSPACELAB) {
-        			run16Lab();
+        			AirForce.run16Lab();
         		} else if (rc.getType() == RobotType.LAUNCHER) {
-        			runLauncher();
+        			AirForce.runLauncher();
         		}
-        		*/
-                detectEnemies();
+                
+                detectEarlyRush();
         		transferSupplies();
         		
         		
@@ -126,19 +129,11 @@ public class RobotPlayer {
 		}
 	}
 
-	private static void detectEnemies() {
-		if (Clock.getRoundNum() < 300) {
-			if (rc.senseNearbyRobots(myRange, enemyTeam).length > 0) {
-				//broadcast that we're on the FULL defensive
-			}
-		}
-	}
-
 	private static void runHQ() throws GameActionException {
 		
 		boolean spawnSuccess = false;
 		int strategy = strategize();
-
+		
         rc.broadcast(200, strategy);
 		
 		Attack.enemyZero();
@@ -162,14 +157,132 @@ public class RobotPlayer {
 		}
 		
 	}
+	
+
+	
+	private static int strategize() throws GameActionException {
+		towerThreat = analyzeTowers();
+		navigability = analyzeMap();
+		int round = Clock.getRoundNum();
+		int soldiers = rc.readBroadcast(Comms.soldierCount);
+		int bashers = rc.readBroadcast(Comms.basherCount);
+		int tanks = rc.readBroadcast(Comms.tanksCount);
+		int drones = rc.readBroadcast(Comms.droneCount);
+		int casualties = rc.readBroadcast(Comms.casualties);
+		int army = bashers + tanks + drones/2 - casualties;
+		
+		if (towerThreat >= 10 && army < (25 + 2*towerThreat) || round < 500) { //improve this formula
+            //play defensive
+			if (navigability < .94) {
+				strategy = 2;	
+			} else {
+				strategy = 0;
+			}
+            
+        } else if (army > (25 + 2*towerThreat)) {
+            strategy = 1;
+            rc.broadcast(Comms.rushOver, 0);
+            int start = rc.readBroadcast(Comms.rushStartRound);
+            if (start == 0) {
+            	rc.broadcast(Comms.rushStartRound, Clock.getRoundNum());
+            }
+        }
+
+		//System.out.println(army + "is the army size, towerTHreat = " + towerThreat);
+		//System.out.println("strategy is : " + strategy);
+		
+		return strategy;
+	}
+	
+	public static double analyzeMap() {
+		int round = Clock.getRoundNum();
+		if (round%10 != 0) { //to save computation
+			return navigability;
+		}
+		
+        int totalNormal = 0, totalVoid = 0, totalProcessed = 0;
+        for (Direction d : directions) {
+        	for (int i = 0; i < 20 ; i++) {
+        		TerrainTile t = rc.senseTerrainTile(myHQ.add(d, i));
+        		//System.out.println("at direction " + d + " and int  i " + i + "it is " + t);
+
+                if (t == TerrainTile.NORMAL) {
+                    totalNormal++;
+                    totalProcessed++;
+                }
+                else if (t == TerrainTile.VOID) {
+                    totalVoid++;
+                    totalProcessed++;
+                }
+                
+                if (Clock.getBytecodesLeft() < 500) {
+                	System.out.println((totalNormal / totalProcessed) + "is the current ratio");
+                    return (double) (totalNormal / totalProcessed);
+                }
+
+        	}
+        }
+        double ratio = (double) totalNormal / (double) totalProcessed;
+        
+        if (round < 100) {
+        	System.out.println("HQ calculation finished, " + ratio + "is the normal/processed");	
+        }
+        
+        
+        return ratio;
+    }
+
+	//analyze how close towers are to each other
+    public static int analyzeTowers() {
+        MapLocation[] towers = rc.senseEnemyTowerLocations();
+        int towerThreat = 0;
+
+        for (int i=0; i< towers.length; ++i) {
+            MapLocation towerLoc = towers[i];
+
+            if ((xMin <= towerLoc.x && towerLoc.x <= xMax && yMin <= towerLoc.y && towerLoc.y <= yMax) ||
+            		towerLoc.distanceSquaredTo(rc.senseEnemyHQLocation()) <= 50) {
+                for (int j=0; j<towers.length; ++j) {
+                    if (towers[j].distanceSquaredTo(towerLoc) <= 50) {
+                        towerThreat++;
+                    }
+                }
+            }
+        }
+        return towerThreat;
+    }
+
+	private static void runTower() throws GameActionException {
+		Attack.lowestHP(Attack.getEnemiesInAttackingRange(RobotType.TOWER));
+		int memory = rc.readBroadcast(Comms.memory(rc.getID()));
+		int oldHealth = (memory == 0)? 1000: memory;
+		RobotInfo[] allies = rc.senseNearbyRobots(myRange, myTeam);
+		//System.out.println("tower's allies = " + allies.length);
+		if (rc.getHealth() < oldHealth - 100) {
+			rc.broadcast(Comms.towerDistressCall, Map.locToInt(rc.getLocation()));
+			if (rc.getHealth() < 10 && navigability < .94) {
+				rc.broadcast(Comms.spawnBeaver, 1); //to fix the damage
+			}
+		}
+	}
 
 	private static void runBeaver() throws GameActionException {
 		Attack.enemyZero();
 		if (rc.isCoreReady()) {
-			economyStrategy(); //good for large maps
+			int strategy = rc.readBroadcast(Comms.strategy);
+			
+			if (strategy == 2) {
+				airforceStrategy();	
+			} else if (strategy == 1) {
+				//rush!!!
+				basicStrategy();	
+			} else {
+				economyStrategy(); //good for large maps
+			}
+			
 			//centerStrategy(); //good for small maps
 			//techStrategy(); //produces a commander
-			//basicStrategy(); 
+			
 			//miningStrategy();
 			//soldierStrategy();
 			//supplyStrategy();
@@ -185,6 +298,26 @@ public class RobotPlayer {
 		}
 	}
 	
+	//All the strategies
+
+	private static void airforceStrategy() throws GameActionException {
+		int MFnum = rc.readBroadcast(Comms.miningfactoryCount);
+		int helipadNum = rc.readBroadcast(Comms.helipadCount);
+		int supplyNum = rc.readBroadcast(Comms.supplydepotCount);
+		int barracks = rc.readBroadcast(Comms.barracksCount);
+		
+		if (MFnum == 0) {
+			becomeHQMiningFactory(MFnum);
+		} else if (helipadNum < 2) {
+			becomeHelipad();
+		} else if (supplyNum < 3){
+			becomeSuppliers();
+		} else if (barracks < 4) {
+			becomeBarracks();
+		} else {
+			becomeTankFactory();
+		}
+	}
 
 	//purely for debugging or optimizing robot types
 	private static void supplyStrategy() throws GameActionException {
@@ -220,7 +353,8 @@ public class RobotPlayer {
 		int MFnum = rc.readBroadcast(Comms.miningfactoryCount);
 		int numBarracks = rc.readBroadcast(Comms.barracksCount);
 		int numSupplyDepots = rc.readBroadcast(Comms.supplydepotCount);
-		
+		int numHelipads = rc.readBroadcast(Comms.helipadCount);
+		int TFnum = rc.readBroadcast(Comms.tankfactoryCount);
 		
 		if (MFnum == 0) {
 			becomeHQMiningFactory(MFnum);
@@ -230,7 +364,9 @@ public class RobotPlayer {
 			becomeMiningFactory(MFnum);
 		else if (numSupplyDepots == 0) {
 		    becomeSuppliers();
-		} else {
+		} else if (numHelipads < 2) {
+			becomeHelipad();
+		} else if (TFnum < 3) {
 			becomeTankFactory();
 		}
 	}
@@ -241,6 +377,7 @@ public class RobotPlayer {
 		int MFnum = rc.readBroadcast(Comms.miningfactoryCount);
 		int numBarracks = rc.readBroadcast(Comms.barracksCount);
 		int TFnum = rc.readBroadcast(Comms.tankfactoryCount);
+		int numSupplyDepots = rc.readBroadcast(Comms.supplydepotCount);
 		
 		//2 mining factories is optimal
 		
@@ -250,8 +387,12 @@ public class RobotPlayer {
 			becomeBarracks();
 		else if (MFnum < 2 )  //barracks
 			becomeMiningFactory(MFnum);
-		else {
+		else if (rc.readBroadcast(Comms.supplydepotCount) < 1) {
+			becomeSuppliers();
+		} else if (TFnum < 4 ){
 			becomeTankFactory();
+		} else if (numSupplyDepots < 4) {
+			becomeSuppliers();
 		}
 		
 	}
@@ -315,6 +456,8 @@ public class RobotPlayer {
 		}
 		
 	}	
+	
+	//All beaver transformation methods
 
 	private static void becomeMiningFactory(int numMiningFactories) throws GameActionException {
 		int maxOreFound = Math.max(20, rc.readBroadcast(Comms.bestOreFieldAmount));
@@ -402,37 +545,25 @@ public class RobotPlayer {
 	
 	private static void becomeSuppliers() throws GameActionException {
 		int numSupplyDepots = rc.readBroadcast(Comms.supplydepotCount);
-        if (rc.getSupplyLevel() < 500) {
-            Map.tryMove(myHQ);
-        } else {
-            if (numSupplyDepots < 2 && rc.getTeamOre() >= 100) {
-                boolean success = tryBuild(directions[rand.nextInt(8)], RobotType.SUPPLYDEPOT);
-                if (success) {
-                    rc.broadcast(Comms.supplydepotCount, numSupplyDepots + 1);
-                }
-            } else if (rc.readBroadcast(Comms.lowestBarracksSupply) < 100) {
-                MapLocation lowestSupplyLoc = Map.intToLoc(rc.readBroadcast(Comms.lowestBarracksSupplyLoc));
-                Map.tryMove(lowestSupplyLoc);
-            } else if (rc.readBroadcast(Comms.lowestSoldierSupply) < 30) {
-                MapLocation lowestSupplyLoc = Map.intToLoc(rc.readBroadcast(Comms.lowestSoldierSupplyLoc));
-                Map.tryMove(lowestSupplyLoc);
-                //System.out.println(rc.readBroadcast(Comms.lowestSoldierSupply) + " go to soldiers");
-            } else if (rc.readBroadcast(Comms.lowestMinerSupply) < 30) {
-                MapLocation lowestSupplyLoc = Map.intToLoc(rc.readBroadcast(Comms.lowestMinerSupplyLoc));
-                Map.tryMove(lowestSupplyLoc);
-                //System.out.println(rc.readBroadcast(Comms.lowestMinerSupply) + " go to miners");
-            } else if (rc.readBroadcast(Comms.lowestMiningFactorySupply) < 100) {
-                MapLocation lowestSupplyLoc = Map.intToLoc(rc.readBroadcast(Comms.lowestMiningFactorySupplyLoc));
-                Map.tryMove(lowestSupplyLoc);
-            } else if (rc.getTeamOre() >= 100) {
-                boolean success = tryBuild(directions[rand.nextInt(8)], RobotType.SUPPLYDEPOT);
-                if (success) {
-                    rc.broadcast(Comms.supplydepotCount, numSupplyDepots + 1);
-                }
-            } else {
-            	Map.randomMove();
+		if (rc.getTeamOre() >= RobotType.SUPPLYDEPOT.oreCost) {
+            boolean success = tryBuild(directions[rand.nextInt(8)], RobotType.SUPPLYDEPOT);
+            if (success) {
+                rc.broadcast(Comms.supplydepotCount, numSupplyDepots + 1);
             }
         }
+        
+	}
+	
+	private static void becomeHelipad() throws GameActionException {
+		int dist = rc.getLocation().distanceSquaredTo(myHQ);
+		if (rc.getTeamOre() > RobotType.HELIPAD.oreCost) {
+			if (tryBuild(directions[rand.nextInt(8)], RobotType.HELIPAD)) {
+				int helipadNum = rc.readBroadcast(Comms.helipadCount);
+				rc.broadcast(Comms.helipadCount, helipadNum + 1);
+			}
+		} else {
+			Map.randomMove();
+		}
 	}
 	
 
@@ -445,6 +576,8 @@ public class RobotPlayer {
 		}
 		
 	}
+	
+	//Methods that are used by all spawning and building robots
 
     // This method will attempt to build in the given direction (or as close to it as possible)
 	static boolean tryBuild(Direction d, RobotType type) throws GameActionException {
@@ -481,6 +614,9 @@ public class RobotPlayer {
 		return success; //use this to determine if spawn was successful or not
 	}
 	
+	
+	//Methods that every robot will use
+	
 	private static void transferSupplies() throws GameActionException {
 	    boolean isHQ = rc.getType() == RobotType.HQ;
 	    boolean isBeaver = rc.getType() == RobotType.BEAVER;
@@ -503,74 +639,19 @@ public class RobotPlayer {
                 suppliesToThisLocation = ri.location;
             }
         }
-        if(suppliesToThisLocation!=null){
+        if(suppliesToThisLocation!=null && transferAmount > 0){
             rc.transferSupplies((int)transferAmount, suppliesToThisLocation);
         }
     }
 	
-	private static int strategize() throws GameActionException {
-		towerThreat = analyzeTowers();
-		int soldiers = rc.readBroadcast(Comms.soldierCount);
-		int bashers = rc.readBroadcast(Comms.basherCount);
-		int tanks = rc.readBroadcast(Comms.tanksCount);
-		int casualties = rc.readBroadcast(Comms.casualties);
-		int army = bashers + tanks - casualties;
-		
-		
-		if(Clock.getRoundNum()>500) {
-			
-			if (towerThreat >= 10 && army < (25 + 2*towerThreat)) {
-	            //play defensive
-	            strategy = 0;
-	        }
-	        else {
-	            strategy = 1;
-	            rc.broadcast(Comms.rushOver, 0);
-	            int start = rc.readBroadcast(Comms.rushStartRound);
-	            if (start == 0) {
-	            	rc.broadcast(Comms.rushStartRound, Clock.getRoundNum());
-	            }
-	            }
+	private static void detectEarlyRush() throws GameActionException {
+		if (Clock.getRoundNum() < 500) {
+			RobotInfo[] enemies = rc.senseNearbyRobots(myRange, enemyTeam);
+			if (enemies.length > 0) {
+				//broadcast that we're on the FULL defensive TODO
+				rc.broadcast(Comms.strategy, 3);
+			}
 		}
-		
-
-		//System.out.println(army + "is the army size, towerTHreat = " + towerThreat);
-		//System.out.println("strategy is : " + strategy);
-		
-		return strategy;
 	}
-	
-    //analyze how close towers are to each other
-    public static int analyzeTowers() {
-        MapLocation[] towers = rc.senseEnemyTowerLocations();
-        towerThreat = 0;
-
-        for (int i=0; i<towers.length; ++i) {
-            MapLocation towerLoc = towers[i];
-
-            if ((xMin <= towerLoc.x && towerLoc.x <= xMax && yMin <= towerLoc.y && towerLoc.y <= yMax) ||
-            		towerLoc.distanceSquaredTo(rc.senseEnemyHQLocation()) <= 50) {
-                for (int j=0; j<towers.length; ++j) {
-                    if (towers[j].distanceSquaredTo(towerLoc) <= 50) {
-                        towerThreat++;
-                    }
-                }
-            }
-        }
-        return towerThreat;
-    }
-    
-    //choose strategy based on tower threat
-    public static void chooseStrategy() throws GameActionException {
-        if (towerThreat >= 10) {
-            //play defensive
-            strategy = 0;
-        }
-        else {
-            strategy = 1;
-            }
-        
-        rc.broadcast(200, strategy);
-    }
 
 }

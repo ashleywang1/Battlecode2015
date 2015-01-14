@@ -81,17 +81,6 @@ public class Ore {
 				} else {
 					Direction away = miner.directionTo(myLoc);
 					Map.tryMove(away); //move away from others
-					/*double p = rand.nextDouble();
-					if (p < .9) {
-											
-					}*/
-					/*else if (p < .8) {
-						Map.tryMove(away.rotateLeft().rotateLeft());
-					} else if (p < .9) {
-						Map.tryMove(away.rotateRight().rotateRight());
-					} else {
-						rc.mine();
-					}*/
 				}				
 			} else if ((enemies.length - minerEnemies) > 0) {
 				Map.tryMove(enemies[0].location.directionTo(myLoc)); //move away from others
@@ -117,7 +106,7 @@ public class Ore {
 		double front = rc.senseOre(myLoc.add(facing));
 		double right = rc.senseOre(myLoc.add(facing.rotateRight()));
 		double left = rc.senseOre(myLoc.add(facing.rotateLeft()));
-		if (oreLoc != 0) {
+		if (oreLoc != 0 && rand.nextDouble() < .9) {
 			MapLocation oreField = Map.intToLoc(oreLoc);
 			//System.out.println(oreField + "is where I'm going");
 			Map.tryMove(myLoc.directionTo(oreField));			

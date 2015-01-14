@@ -9,6 +9,10 @@ public class Comms {
 	public static final int barracksCount = 4;
 	public static final int tankfactoryCount = 104;
 	public static final int tanksCount = 105;
+	public static final int helipadCount = 106;
+	public static final int droneCount = 107;
+	public static final int aerospacelabCount = 108;
+	public static final int launcherCount = 109;
 	public static final int minerCount = 5;
 	public static final int miningfactoryCount = 6;
 	public static final int supplydepotCount = 7;
@@ -17,7 +21,7 @@ public class Comms {
 	public static final int commanderCount = 10;
 	
 	//channel to broadcast which strategy for atking towers
-	public static final int towerStrategy = 200;
+	public static final int strategy = 200;
 	
 	/*When a beaver is spawned from the HQ, use this channel to communicate info.
 	This info is usually read and then rebroadcasted to the robot's own ID channel. */
@@ -47,6 +51,7 @@ public class Comms {
 	//strategy
 	public static int maxBeavers = 24;
 	public static int spawnBeaver = 25;
+	public static int towerDistressCall = 26;
 	
 	//robot ID channel
 	//All 4 digit broadcasting channels are reserved for robot ID channels. (ID - fist digit)

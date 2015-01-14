@@ -28,11 +28,6 @@ public class Map {
 	static int mapXsign = RobotPlayer.mapXsign;
 	static int mapYsign = RobotPlayer.mapYsign;
 
-
-	public static int strategize() {
-		// TODO Find HQ distances from each other, void/normal ratio, casualties (rushing or not)
-		return 0;
-	}
 	
     // This method will attempt to move in Direction d (or as close to it as possible)
 	static void tryMove(Direction d) throws GameActionException {
@@ -57,11 +52,13 @@ public class Map {
 		double prob = rand.nextDouble();
 		int sign = 1;
 		
+		//add some randomization
 		if (prob < .5) {
 			sign = -1;
 		}
 		
 		while (offsetIndex < 5 && !rc.canMove(directions[(dirint+sign*offsets[offsetIndex]+8)%8])) {
+			
 			offsetIndex++;
 		}
 		if (offsetIndex < 5) {
@@ -69,6 +66,7 @@ public class Map {
 		}
 	}
 	
+
 	public static void carelessMove() throws GameActionException {
 		double n = rand.nextDouble();
 		if ( n < .5) {
@@ -87,6 +85,36 @@ public class Map {
 				facing = facing.rotateRight();
 			}
 		}
+		//Now actually move
+		if (rc.isCoreReady() && rc.canMove(facing)) {
+			rc.move(facing);
+		}
+	}
+	
+	public static void airCarelessMove() throws GameActionException {
+		MapLocation tileInFront = rc.getLocation().add(facing);
+		double n = rand.nextDouble();
+		
+		if ( n < .5) {
+			if (n < .25) {
+				facing = facing.rotateLeft();
+			} else {
+				facing = facing.rotateRight();
+			}
+		}else if(rc.senseTerrainTile(tileInFront)==TerrainTile.OFF_MAP){
+			double p = rand.nextDouble();
+			if (p < .3) {
+				facing = facing.rotateLeft();	
+			} else if (p < .6) {
+				facing = facing.rotateRight();
+			} else {
+				facing = facing.rotateLeft().rotateLeft();
+			}
+			
+			tryMove(facing);
+		}
+		
+		//Now actually move
 		if (rc.isCoreReady() && rc.canMove(facing)) {
 			rc.move(facing);
 		}
@@ -110,18 +138,86 @@ public class Map {
 		
 		if ((threats.length - harmless) > 1) {
 			Direction away = threats[0].location.directionTo(myHQ);
-			if (rc.isCoreReady() && rc.canMove(away)) {
-				rc.move(away);
+			tryMove(away); //could go into danger
+		} else if (!tileInFrontSafe) {
+			
+			Direction safe = findSafeTile();
+			if (rc.isCoreReady() && rc.canMove(safe)) {
+				rc.move(safe);
 			}
-		} else if(rc.senseTerrainTile(tileInFront)!=TerrainTile.NORMAL||!tileInFrontSafe){ 
-				facing = facing.rotateLeft();
+		} else if(rc.senseTerrainTile(tileInFront)!=TerrainTile.NORMAL){
+			double p = rand.nextDouble();
+			if (p < .3) {
+				facing = facing.rotateLeft();	
+			} else if (p < .6) {
+				facing = facing.rotateRight();
+			} else {
+				facing = facing.rotateLeft().rotateLeft();
 			}
-		else {
+			
+			tryMove(facing);
+		} else {
 			carelessMove();
 		}
 	}
 	
-    // This method will randomly move in Direction d
+	
+	public static void airRandomMove() throws GameActionException {
+		RobotInfo[] threats = rc.senseNearbyRobots(myRange, enemyTeam);
+		int harmless = nearbyRobots(threats, RobotType.MINER);
+		
+		//check that the direction in front is not a tile that can be attacked by the enemy towers
+		MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
+		boolean tileInFrontSafe = true;
+		MapLocation tileInFront = rc.getLocation().add(facing);
+		for(MapLocation m: enemyTowers){
+			if(m.distanceSquaredTo(tileInFront)<=RobotType.TOWER.attackRadiusSquared + 9){
+				tileInFrontSafe = false;
+				break;
+			}
+		}
+		
+		if ((threats.length - harmless) > 1) {
+			Direction away = threats[0].location.directionTo(myHQ);
+			tryMove(away); //could go into danger
+		} else if (!tileInFrontSafe) {
+			
+			Direction safe = findSafeTile();
+			System.out.println(safe + "am I safe  here? " + rc.getLocation());
+			if (rc.isCoreReady() && rc.canMove(safe)) {
+				rc.move(safe);
+			}
+		} else {
+			airCarelessMove();
+		}
+	}
+	
+    private static Direction findSafeTile() throws GameActionException {
+		MapLocation myLoc = rc.getLocation();
+		for (Direction d: directions) {
+			if (checkSafety(myLoc, d) && !rc.isLocationOccupied(myLoc.add(d))) {
+				return d;
+			}
+		}
+		
+		return myLoc.directionTo(myHQ);
+		
+	}
+    
+	private static boolean checkSafety(MapLocation location, Direction dir) {
+		MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
+		boolean tileInFrontSafe = true;
+		MapLocation tileInFront = rc.getLocation().add(dir);
+		for(MapLocation m: enemyTowers){
+			if(m.distanceSquaredTo(tileInFront)<=RobotType.TOWER.attackRadiusSquared + 25){
+				tileInFrontSafe = false;
+				break;
+			}
+		}
+		return tileInFrontSafe;
+	}
+
+	// This method will randomly move in Direction d
 	static void wanderToward(Direction d, double urgency) throws GameActionException {
 		double p = rand.nextDouble();
 		
@@ -186,6 +282,20 @@ public class Map {
 			}
 		}
 		return num;
+	}
+	
+	public static MapLocation nearestTower(MapLocation[] enemyTowers) {
+		
+		MapLocation nearestTower = enemyTowers[0];
+		int minDistance = enemyTowers[0].distanceSquaredTo(myHQ);
+		for (MapLocation tower: enemyTowers) {
+			int dist = tower.distanceSquaredTo(myHQ);
+			if (dist < minDistance) {
+				minDistance = dist;
+				nearestTower = tower;
+			}
+		}
+		return nearestTower;
 	}
 
 }

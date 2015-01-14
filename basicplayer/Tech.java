@@ -27,7 +27,7 @@ public class Tech {
 
 	public static void runCommander() throws GameActionException {
 		Attack.enemyZero();
-		Army.rallyRush();
+		Army.moveArmy();
 	}
 
 	public static void runTrainingField() throws GameActionException {
