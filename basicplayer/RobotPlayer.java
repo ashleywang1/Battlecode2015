@@ -23,6 +23,7 @@ public class RobotPlayer {
 	
 	static Random rand;
 	static Direction[] directions = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST};
+	static RobotType[] structures = {RobotType.MINERFACTORY, RobotType.BARRACKS, RobotType.HELIPAD};
 	
 	static int towerThreat;
 	static double navigability;
@@ -118,8 +119,9 @@ public class RobotPlayer {
         			AirForce.runLauncher();
         		}
                 
-                detectEarlyRush();
+                detectEnemies();
         		transferSupplies();
+        		Ore.goProspecting();
         		
         		
             } catch (Exception e) {
@@ -167,6 +169,7 @@ public class RobotPlayer {
 		towerThreat = analyzeTowers();
 		navigability = analyzeMap();
 		int round = Clock.getRoundNum();
+		int strategy = rc.readBroadcast(Comms.strategy);
 		int soldiers = rc.readBroadcast(Comms.soldierCount);
 		int bashers = rc.readBroadcast(Comms.basherCount);
 		int tanks = rc.readBroadcast(Comms.tanksCount);
@@ -276,14 +279,19 @@ public class RobotPlayer {
 		if (rc.isCoreReady()) {
 			int strategy = rc.readBroadcast(Comms.strategy);
 			
+			airforceStrategy();
+			/*
 			if (strategy == 2) {
 				airforceStrategy();	
 			} else if (strategy == 1) {
 				//rush!!!
 				basicStrategy();	
+			} else if (strategy == 0) {
+				economyStrategy(); //good for large maps
 			} else {
 				basicStrategy(); //good for large maps
 			}
+			*/
 			
 			//centerStrategy(); //good for small maps
 			//techStrategy(); //produces a commander
@@ -311,6 +319,7 @@ public class RobotPlayer {
 		int helipadNum = rc.readBroadcast(Comms.helipadCount);
 		int supplyNum = rc.readBroadcast(Comms.supplydepotCount);
 		int barracks = rc.readBroadcast(Comms.barracksCount);
+		int TFnum = rc.readBroadcast(Comms.tankfactoryCount);
 		
 		if (MFnum == 0) {
 			becomeHQMiningFactory(MFnum);
@@ -353,8 +362,12 @@ public class RobotPlayer {
 	private static void miningStrategy() throws GameActionException {
 		int MFnum = rc.readBroadcast(Comms.miningfactoryCount);
 		
-		if (MFnum < 2) {
+		if (MFnum == 0) {
+			becomeHQMiningFactory(MFnum);
+		} else if (MFnum < 2) {
 			becomeMiningFactory(MFnum);	
+		} else {
+			Map.randomMove();
 		}
 	}
 	
@@ -373,6 +386,7 @@ public class RobotPlayer {
 			becomeHQBarracks(numBarracks);
 		}else if (numSupplyDepots==0){
 			becomeSuppliers();
+
 		} else if (TFnum < 10) {
 			if(TFnum >3 && numSupplyDepots<3){
 				becomeSuppliers();
@@ -384,8 +398,6 @@ public class RobotPlayer {
 
 	}
 	
-
-
 	private static void economyStrategy() throws GameActionException {
 		int round = Clock.getRoundNum(); //Is there a more efficient place to put this? TODO
 		
@@ -435,6 +447,7 @@ public class RobotPlayer {
 			becomeMiningFactory(MFnum);
 		else {
 			becomeTankFactory();
+>>>>>>> origin/master
 		}
 		
 	}
@@ -596,10 +609,11 @@ public class RobotPlayer {
 	
 
 	private static void beaverMine() throws GameActionException {
-		if (rc.senseOre(rc.getLocation()) > 4){
+		if (rc.senseOre(rc.getLocation()) > 1){
 			rc.mine();	
 		} else {
-			Map.randomMove();
+			//Map.randomMove();
+			Ore.minerMove(rc.getLocation());
 			//or detect good ore and move there
 		}
 		
@@ -672,14 +686,44 @@ public class RobotPlayer {
         }
     }
 	
-	private static void detectEarlyRush() throws GameActionException {
+	private static void detectEnemies() throws GameActionException {
+		RobotType type = rc.getType();
+		RobotInfo[] enemies = rc.senseNearbyRobots(myRange, enemyTeam);
+		MapLocation myLoc = rc.getLocation();
+		
 		if (Clock.getRoundNum() < 500) {
-			RobotInfo[] enemies = rc.senseNearbyRobots(myRange, enemyTeam);
-			if (enemies.length > 0) {
+			int earlyRally = rc.readBroadcast(Comms.defensiveRally);
+			if (enemies.length > 0 && earlyRally == 0) {
 				//broadcast that we're on the FULL defensive TODO
-				rc.broadcast(Comms.strategy, 3);
+				//rc.broadcast(Comms.strategy, 3);
+				//rc.broadcast(Comms.defensiveRally, Map.locToInt(enemies[0].location));
 			}
 		}
+		if (type == RobotType.MINER && rc.readBroadcast(Comms.enemiesNearMiners) == 0 && enemies.length > 3) {
+			rc.broadcast(Comms.enemiesNearMiners, Map.locToInt(myLoc));
+		} else if (type == RobotType.DRONE && enemies.length > 0) {
+			if (enemies.length > 3) {
+				System.out.println("Drone found more than 3 enemies. Run away?");
+				rc.broadcast(Comms.droneRallyPoint, Map.locToInt(myLoc));
+			} else {
+				for (RobotInfo target: enemies) {
+					
+					for (RobotType struct: structures) {
+						if (target.type == struct) {
+							rc.broadcast(Comms.droneTarget, Map.locToInt(target.location));
+							continue;
+						}
+					}
+				}
+			}
+		}
+		/* RobotType type = rc.getType();
+		if (rc.getHealth() < 10) {
+			System.out.println("SOLDIER DOWN SOLDIER DOWN" + rc.getID());
+			int deaths = rc.readBroadcast(Comms.casualties);
+			rc.broadcast(Comms.casualties, deaths + 1);
+		} //I haven't used this yet TODO
+		*/
 	}
 
 }

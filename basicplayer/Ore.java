@@ -75,8 +75,21 @@ public class Ore {
 		if (rc.isCoreReady()) {
 			MapLocation myLoc = rc.getLocation();
 			MapLocation miner = nearestMiner(allies);
-			if (miner!=null) { //if you're not crowded allies.length < 3 &&
-				if ((rc.senseOre(myLoc) < 12)) {
+			if (rc.senseOre(myLoc) > 3) {
+				if (miner != null && rand.nextDouble() < .3) {
+					Map.tryMove(facing);
+				} else {
+					rc.mine();	
+				}
+				
+			} else {
+				minerMove(myLoc);
+			}
+				
+			/*
+			int enemiesInSight = rc.readBroadcast(Comms.enemiesNearMiners);
+			if (miner!=null && enemiesInSight == 0) { //if you're being crowded
+				if ((rc.senseOre(myLoc) < 3)) {
 					minerMove(myLoc);	
 				} else {
 					Direction away = miner.directionTo(myLoc);
@@ -84,28 +97,25 @@ public class Ore {
 				}				
 			} else if ((enemies.length - minerEnemies) > 0) {
 				Map.tryMove(enemies[0].location.directionTo(myLoc)); //move away from others
-			} else if (rc.senseOre(myLoc) > 12) {
-				if (rand.nextDouble() < .8) {
-					rc.mine();	
-				} else {
-					Map.tryMove(facing);
-				}
-				
+			} else if (rc.senseOre(myLoc) > 3) {
+				rc.mine();
 			} else {
 				minerMove(myLoc);
 			}
+			*/
 		}
 		
 		Supply.requestSupplyForGroup();
 		
 	}
 	
-	private static void minerMove(MapLocation myLoc) throws GameActionException {
+	public static void minerMove(MapLocation myLoc) throws GameActionException {
 		
 		int oreLoc = rc.readBroadcast(Comms.bestOreFieldLoc);
-		double front = rc.senseOre(myLoc.add(facing));
-		double right = rc.senseOre(myLoc.add(facing.rotateRight()));
-		double left = rc.senseOre(myLoc.add(facing.rotateLeft()));
+		//double front = rc.senseOre(myLoc.add(facing));
+		//double right = rc.senseOre(myLoc.add(facing.rotateRight()));
+		//double left = rc.senseOre(myLoc.add(facing.rotateLeft()));
+		
 		if (oreLoc != 0 && rand.nextDouble() < .9) {
 			MapLocation oreField = Map.intToLoc(oreLoc);
 			//System.out.println(oreField + "is where I'm going");
@@ -113,6 +123,7 @@ public class Ore {
 		}
 		else {
 			Map.randomMove();
+			
 		}
 		
 	}

@@ -87,33 +87,54 @@ public class Army {
 		int strategy = rc.readBroadcast(200);
 		MapLocation myLoc = rc.getLocation();
 		int rushOver = rc.readBroadcast(Comms.rushOver);
+		int earlyDefense = rc.readBroadcast(Comms.defensiveRally);
 		//System.out.println("soldiers get that strategy is : " + strategy + " and rushOver is : " + rushOver);
 		
 		if (rc.isCoreReady()) {
 			
 			int helpTower = rc.readBroadcast(Comms.towerDistressCall);
 			boolean outnumbered = (rc.senseTowerLocations().length < rc.senseEnemyTowerLocations().length + 1);
-			
+	
+			AirForce.containHQ();
+			/*
 			if (outnumbered && Clock.getRoundNum() > 1800) {
 				groundRush();
 			} else if (helpTower != 0 && rc.getType() == RobotType.SOLDIER) {
 				defendTower(helpTower);
 			} else if (strategy == 1) { //RUSH!
 				groundRush();
+			} else if (earlyDefense != 0) {
+				shutDown(earlyDefense);
 			} else {
 				//shut down TODO
 				Map.randomMove();
 			}
+			*/
 		}
 		
 	}
 
+	private static void shutDown(int enemyDetected) throws GameActionException {
+		MapLocation breach = Map.intToLoc(enemyDetected);
+		if (breach.distanceSquaredTo(myHQ) > breach.distanceSquaredTo(enemyHQ)){ //attack
+			Map.tryMove(breach);
+		} else {
+			Map.tryMove(myHQ);
+		}
+		//Map.tryMove(toHelp);
+	}
+
+>>>>>>> origin/master
 	public static void defendTower(int help) throws GameActionException {
 		MapLocation myLoc = rc.getLocation();
 		RobotInfo[] allies = rc.senseNearbyRobots(myRange,myTeam);
 		MapLocation toHelp = Map.intToLoc(help);
 		Map.tryMove(toHelp);
-		RobotInfo myTower = rc.senseRobotAtLocation(toHelp);
+		RobotInfo myTower = null;
+		
+		if (rc.canSenseLocation(toHelp)) {
+			myTower = rc.senseRobotAtLocation(toHelp);
+		}
 		
 		if ( myTower == null) { //tower down
 			rc.broadcast(Comms.towerDistressCall, 0); //no tower to defend anymore

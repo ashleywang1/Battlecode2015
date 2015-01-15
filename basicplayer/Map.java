@@ -234,10 +234,10 @@ public class Map {
 		
 	}
     
-	private static boolean checkSafety(MapLocation location, Direction dir) {
+	public static boolean checkSafety(MapLocation myLoc, Direction dir) {
 		MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
 		boolean tileInFrontSafe = true;
-		MapLocation tileInFront = rc.getLocation().add(dir);
+		MapLocation tileInFront = myLoc.add(dir);
 		for(MapLocation m: enemyTowers){
 			if(m.distanceSquaredTo(tileInFront)<=RobotType.TOWER.attackRadiusSquared + 25){
 				tileInFrontSafe = false;
