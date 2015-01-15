@@ -20,8 +20,7 @@ public class Comms {
 	public static final int TrainingFieldCount = 9;
 	public static final int commanderCount = 10;
 	
-	//channel to broadcast which strategy for atking towers
-	public static final int strategy = 200;
+
 	
 	/*When a beaver is spawned from the HQ, use this channel to communicate info.
 	This info is usually read and then rebroadcasted to the robot's own ID channel. */

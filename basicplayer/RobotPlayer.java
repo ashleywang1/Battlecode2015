@@ -447,7 +447,7 @@ public class RobotPlayer {
 			becomeMiningFactory(MFnum);
 		else {
 			becomeTankFactory();
->>>>>>> origin/master
+
 		}
 		
 	}
