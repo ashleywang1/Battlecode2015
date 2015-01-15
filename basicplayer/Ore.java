@@ -33,7 +33,7 @@ public class Ore {
 		boolean success = false;
 		int numMiners = rc.readBroadcast(Comms.minerCount);
 		int round = Clock.getRoundNum();
-		if (rc.isCoreReady() && numMiners < 100 && 
+		if (rc.isCoreReady() && numMiners < 60 && 
 				((rc.getTeamOre() >= RobotType.MINER.oreCost && round < 400) || 
 						(rc.getTeamOre() >= RobotType.MINER.oreCost + 200))) {
 			int oreFields = rc.readBroadcast(Comms.bestOreFieldLoc);

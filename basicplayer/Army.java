@@ -23,11 +23,13 @@ public class Army {
 	public static void runBarracks() throws GameActionException {
 		if (rc.isCoreReady()) {
 			if (Clock.getRoundNum() > 200) {
-				if (rc.getTeamOre() > RobotType.BASHER.oreCost && rand.nextDouble() < .4){
-					if (RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.BASHER)) {
-						int numBashers = rc.readBroadcast(Comms.basherCount);
-						rc.broadcast(Comms.basherCount, numBashers + 1);
-					}
+//				if (rc.getTeamOre() > RobotType.BASHER.oreCost && rand.nextDouble() < .4){
+//					if (RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.BASHER)) {
+//						int numBashers = rc.readBroadcast(Comms.basherCount);
+//						rc.broadcast(Comms.basherCount, numBashers + 1);
+//					}
+				int numSupplyDepots = rc.readBroadcast(Comms.supplydepotCount);
+				int numTankFactories = rc.readBroadcast(Comms.tankfactoryCount);
 				} else if (rc.getTeamOre() > RobotType.SOLDIER.oreCost) {
 					if (RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.SOLDIER)) {
 						int numSoldiers = rc.readBroadcast(Comms.soldierCount);
@@ -35,7 +37,7 @@ public class Army {
 					}
 				} 
 			}
-		}
+		
 	      
         Supply.requestSupply();
 
@@ -46,6 +48,13 @@ public class Army {
 		Attack.attackTower();
 		moveArmy();
 		
+		if (rc.getHealth() < 1) {
+			int deaths = rc.readBroadcast(Comms.casualties);
+			rc.broadcast(Comms.casualties, deaths + 1);
+		} //I haven't used this yet TODO
+		
+		Ore.goProspecting();
+		
 	}
 
 	public static void runBasher() throws GameActionException {
@@ -55,9 +64,10 @@ public class Army {
 
 
 	public static void runTankFactory() throws GameActionException {
+		int TFnum = rc.readBroadcast(Comms.tankfactoryCount);
 		if (rc.isCoreReady()) {
 			int tanks = rc.readBroadcast(Comms.tanksCount);
-			if (rc.getTeamOre() > RobotType.TANK.oreCost && tanks < 50) {
+			if (rc.getTeamOre() > RobotType.TANK.oreCost && TFnum>3 && tanks < 50) {
 				if (RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.TANK)) {
 					rc.broadcast(Comms.tanksCount, tanks + 1);
 				}
@@ -66,6 +76,7 @@ public class Army {
 	}
 
 	public static void runTank() throws GameActionException {
+		Ore.goProspecting();
 		Attack.enemyZero();
 		moveArmy();
 		
@@ -83,10 +94,10 @@ public class Army {
 			
 			int helpTower = rc.readBroadcast(Comms.towerDistressCall);
 			boolean outnumbered = (rc.senseTowerLocations().length < rc.senseEnemyTowerLocations().length + 1);
-			int round = Clock.getRoundNum();
+	
 			AirForce.containHQ();
 			/*
-			if (outnumbered && round > 1800) {
+			if (outnumbered && Clock.getRoundNum() > 1800) {
 				groundRush();
 			} else if (helpTower != 0 && rc.getType() == RobotType.SOLDIER) {
 				defendTower(helpTower);
@@ -113,6 +124,7 @@ public class Army {
 		//Map.tryMove(toHelp);
 	}
 
+>>>>>>> origin/master
 	public static void defendTower(int help) throws GameActionException {
 		MapLocation myLoc = rc.getLocation();
 		RobotInfo[] allies = rc.senseNearbyRobots(myRange,myTeam);

@@ -9,6 +9,7 @@ public class RobotPlayer {
 	public static int strategy; // 0 = "defend", 1 = attack (maybe choose between building drones and soldiers later
 	public static int xMin, xMax, yMin, yMax;
 	public static int mapXsign, mapYsign;
+	public static int hqID;
 	static RobotController rc;
 	static Team myTeam;
 	static MapLocation myHQ;
@@ -70,6 +71,7 @@ public class RobotPlayer {
                 rc.setIndicatorString(1, "I am a " + rc.getType());
                 
                 if (rc.getType() == RobotType.HQ) { //MAIN
+                	hqID = rc.getID();
         			runHQ();
         		} else if (rc.getType() == RobotType.BEAVER) {
         			runBeaver();
@@ -139,6 +141,7 @@ public class RobotPlayer {
         rc.broadcast(200, strategy);
 		
 		Attack.enemyZero();
+		
 		if (rc.isCoreReady()) {
 			int numBeavers = rc.readBroadcast(Comms.beaverCount);
 			int maxBeavers = Math.max(5, rc.readBroadcast(Comms.maxBeavers));
@@ -175,12 +178,12 @@ public class RobotPlayer {
 		int army = bashers + tanks + drones/2 - casualties;
 		
 		if (towerThreat >= 10 && army < (25 + 2*towerThreat) || round < 500) { //improve this formula
-            //play defensive
-			if (navigability < .94) {
-				strategy = 2;	
-			} else {
-				strategy = 0;
-			}
+            strategy = 2;
+//			if (navigability < .94) {
+//				strategy = 2;	
+//			} else {
+//				strategy = 0;
+//			}
             
         } else if (army > (25 + 2*towerThreat)) {
             strategy = 1;
@@ -270,9 +273,11 @@ public class RobotPlayer {
 	}
 
 	private static void runBeaver() throws GameActionException {
-		Attack.enemyZero();
+		if(rc.isCoreReady()&&Clock.getRoundNum()>1800){
+			trySpawn(directions[rand.nextInt(8)], RobotType.HANDWASHSTATION);
+		}
 		if (rc.isCoreReady()) {
-			//int strategy = rc.readBroadcast(Comms.strategy);
+			int strategy = rc.readBroadcast(Comms.strategy);
 			
 			airforceStrategy();
 			/*
@@ -284,7 +289,7 @@ public class RobotPlayer {
 			} else if (strategy == 0) {
 				economyStrategy(); //good for large maps
 			} else {
-				beaverMine();
+				basicStrategy(); //good for large maps
 			}
 			*/
 			
@@ -301,13 +306,15 @@ public class RobotPlayer {
 				rc.broadcast(Comms.beaverCount, numBeavers - 1);
 				System.out.println("BEAVER DOWN! BEAVER DOWN!");
 			}*/
+			Attack.enemyZero();
+			Ore.goProspecting();
 			
 		}
 	}
 	
 	//All the strategies
 
-	private static void airforceStrategy() throws GameActionException { //contain the HQ, basically
+	private static void airforceStrategy() throws GameActionException {
 		int MFnum = rc.readBroadcast(Comms.miningfactoryCount);
 		int helipadNum = rc.readBroadcast(Comms.helipadCount);
 		int supplyNum = rc.readBroadcast(Comms.supplydepotCount);
@@ -316,15 +323,20 @@ public class RobotPlayer {
 		
 		if (MFnum == 0) {
 			becomeHQMiningFactory(MFnum);
-		} else if (helipadNum < 2) {
+		} else if(helipadNum ==0){
 			becomeHelipad();
-		} else if (supplyNum < 3){
+		}else{
+			if(helipadNum-supplyNum>=2){
 			becomeSuppliers();
-		} else if (barracks < 4 && navigability > .94) {
-			becomeBarracks();
-		} else if (navigability > .94) {
-			becomeTankFactory();
+			}else
+			becomeHelipad();
 		}
+
+//		 else if (barracks < 4) {
+//			becomeBarracks();
+//		} else {
+//			becomeTankFactory();
+//		}
 	}
 
 	//purely for debugging or optimizing robot types
@@ -368,19 +380,22 @@ public class RobotPlayer {
 		int numHelipads = rc.readBroadcast(Comms.helipadCount);
 		int TFnum = rc.readBroadcast(Comms.tankfactoryCount);
 		
-		if (MFnum == 0) {
+		if (MFnum <2) {
 			becomeHQMiningFactory(MFnum);
-		} else if (numBarracks < 2)  //minerfactory
-			becomeBarracks();
-		else if (MFnum < 2 )  //barracks
-			becomeMiningFactory(MFnum);
-		else if (numSupplyDepots == 0) {
-		    becomeSuppliers();
-		} else if (numHelipads < 2) {
-			becomeHelipad();
-		} else if (TFnum < 3) {
+		} else if (numBarracks ==0){  //make one barrack
+			becomeHQBarracks(numBarracks);
+		}else if (numSupplyDepots==0){
+			becomeSuppliers();
+
+		} else if (TFnum < 10) {
+			if(TFnum >3 && numSupplyDepots<3){
+				becomeSuppliers();
+			}else
 			becomeTankFactory();
 		}
+//		} else if (numHelipads < 2) {
+//			becomeHelipad();
+
 	}
 	
 	private static void economyStrategy() throws GameActionException {
@@ -432,6 +447,7 @@ public class RobotPlayer {
 			becomeMiningFactory(MFnum);
 		else {
 			becomeTankFactory();
+>>>>>>> origin/master
 		}
 		
 	}
@@ -510,6 +526,17 @@ public class RobotPlayer {
 			beaverMine();		
 		}
 	}
+	
+	private static void becomeHQBarracks(int numBarracks) throws GameActionException {
+		if(rc.getTeamOre() >=300){
+			Direction away = myHQ.directionTo(rc.getLocation());
+			boolean success = tryBuild(away ,RobotType.BARRACKS);
+			if (success) {
+				rc.broadcast(Comms.barracksCount, numBarracks+1);
+			}
+		}
+		
+	}
 
 	private static void becomeBarracks() throws GameActionException {
 		RobotInfo[] neighbors = rc.senseNearbyRobots(myRange);
@@ -541,17 +568,17 @@ public class RobotPlayer {
 	}
 
 	private static void becomeTankFactory() throws GameActionException {
-		if (rc.senseNearbyRobots(myRange).length < 3 && rc.hasBuildRequirements(RobotType.TANKFACTORY)) {
+		if (rc.hasBuildRequirements(RobotType.TANKFACTORY)) {
 			if (rc.getTeamOre() > RobotType.TANKFACTORY.oreCost) {
 				boolean success = tryBuild(directions[rand.nextInt(8)], RobotType.TANKFACTORY);
 				if (success) {
 					int TFnum = rc.readBroadcast(Comms.tankfactoryCount);
 					rc.broadcast(Comms.tankfactoryCount, TFnum + 1);
-				}
+				} 
 				
-			}	
-		} else {
-			Map.randomMove();
+			}	else {
+				Map.beaverMove();
+			}
 		}
 	}
 	
@@ -562,7 +589,9 @@ public class RobotPlayer {
             if (success) {
                 rc.broadcast(Comms.supplydepotCount, numSupplyDepots + 1);
             }
-        }
+        }else {
+			Map.beaverMove();
+		}
         
 	}
 	
@@ -574,7 +603,7 @@ public class RobotPlayer {
 				rc.broadcast(Comms.helipadCount, helipadNum + 1);
 			}
 		} else {
-			beaverMine();
+			Map.randomMove();
 		}
 	}
 	

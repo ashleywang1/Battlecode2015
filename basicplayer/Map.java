@@ -19,6 +19,7 @@ public class Map {
 	static MapLocation myHQ = RobotPlayer.myHQ;
 	static Team enemyTeam = RobotPlayer.enemyTeam;
 	static MapLocation enemyHQ = RobotPlayer.enemyHQ;
+	static int hqID = RobotPlayer.hqID;
 	
 	static int myRange = RobotPlayer.myRange;
 	static Direction facing = RobotPlayer.facing;
@@ -66,7 +67,36 @@ public class Map {
 		}
 	}
 	
-
+	public static void beaverMove() throws GameActionException{
+		double n = rand.nextDouble();
+		if ( n < .5) {
+			if (n < .25) {
+				facing = facing.rotateLeft();
+			} else {
+				facing = facing.rotateRight();
+			}
+		}
+		
+		//avoid void and offmap tiles
+	
+		double p = rand.nextDouble();
+		while (rc.senseTerrainTile(rc.getLocation().add(facing)) != TerrainTile.NORMAL) {
+			if (p < .5) {
+				facing = facing.rotateLeft();
+			} else {
+				facing = facing.rotateRight();
+			}
+		}
+		//Now actually move
+		//avoid going too far from HQ
+		if(rc.senseNearbyRobots(myHQ, 2*RobotType.BEAVER.sensorRadiusSquared, myTeam).length >0){
+			if (rc.isCoreReady() && rc.canMove(facing)) {
+				rc.move(facing);
+			}
+		}else
+			Map.tryMove(myHQ);
+		
+	}
 	public static void carelessMove() throws GameActionException {
 		double n = rand.nextDouble();
 		if ( n < .5) {

@@ -76,8 +76,8 @@ public class AirForce {
 				droneRush();
 			} else if (helpTower != 0) {
 				defendTower(helpTower);
-			} else if (numDrones < 20 && strategy != 1) {
-				protectMiners();
+			} else if (numDrones < 50 && strategy != 1) { 
+				rallyAround(myHQ);
 			} else { //RUSH
 				droneRush();
 				
@@ -127,6 +127,7 @@ public class AirForce {
 		}
 	}
 
+>>>>>>> origin/master
 	private static void defendTower(int help) throws GameActionException {
 		MapLocation myLoc = rc.getLocation();
 		RobotInfo[] allies = rc.senseNearbyRobots(myRange,myTeam);
@@ -144,7 +145,7 @@ public class AirForce {
 		int rushOver = rc.readBroadcast(Comms.rushOver);
 		int strategy = rc.readBroadcast(Comms.strategy);
 		
-		MapLocation destination = enemyHQ; //.add(enemyHQ.directionTo(myHQ), RobotType.HQ.attackRadiusSquared + 25);
+		MapLocation destination = enemyHQ;
 		if (enemyTowers.length > 0) {
 			destination = Map.nearestTower(enemyTowers);
 			//attack the least defended one TODO
@@ -161,7 +162,7 @@ public class AirForce {
 		
 	}
 
-	private static void rallyContain(MapLocation rallyPoint, int radius) throws GameActionException {
+	public static void rallyAround(MapLocation rallyPoint) throws GameActionException {
 		MapLocation myLoc = rc.getLocation();
 		if (myLoc.distanceSquaredTo(rallyPoint) > radius) {
 			rallyAround(rallyPoint);

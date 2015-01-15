@@ -132,6 +132,8 @@ public class RobotPlayer {
 					System.out.println("Tower Exception");
                     e.printStackTrace();
 				}
+					else{
+						buildUnit(RobotType.BARRACKS);
             }
 			
 			
@@ -260,7 +262,37 @@ public class RobotPlayer {
 		}
 		if (offsetIndex < 5) {
 			rc.move(directions[(dirint+offsets[offsetIndex]+8)%8]);
+			}
 		}
+		
+	}
+
+	private static void buildUnit(RobotType type) throws GameActionException {
+		if(rc.getTeamOre()>RobotType.MINERFACTORY.oreCost){
+			Direction buildDir = getRandomDirection();
+			if(rc.isCoreReady()&&rc.canBuild(buildDir, type));
+				rc.build(buildDir, type);
+		}
+		
+	}
+
+	private static void attackEnemyZero() throws GameActionException {
+		RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(rc.getLocation(), rc.getType().attackRadiusSquared, rc.getTeam().opponent());
+		//shoot at any enemy (can choose which type later, lowest hp etc)
+		if(nearbyEnemies.length>0){ //there exists enemies near
+			//try to shoot at enemy specified by nearbyenemies[0]
+			if(rc.isWeaponReady()&&rc.canAttackLocation(nearbyEnemies[0].location)){
+				rc.attackLocation(nearbyEnemies[0].location);
+			}
+		}
+	}
+
+	private static void spawnUnit(RobotType type) throws GameActionException {
+		Direction randomDir = getRandomDirection();
+		if(rc.isCoreReady()&&rc.canSpawn(randomDir,type)){
+			rc.spawn(randomDir, type);
+		}
+		
 	}
 	
     // This method will attempt to spawn in the given direction (or as close to it as possible)
@@ -315,5 +347,30 @@ public class RobotPlayer {
 			default:
 				return -1;
 		}
+			else{
+				facing = facing.rotateRight();
+			}
 	}
+		MapLocation tileInFront = rc.getLocation().add(facing);
+		
+		//check tile in front cannot be atked by enemy towers
+		MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
+		boolean tileInFrontSafe = true;
+		for(MapLocation m: enemyTowers){
+			if(m.distanceSquaredTo(tileInFront)<=RobotType.TOWER.attackRadiusSquared){
+				tileInFrontSafe = false;
+				break;
+			}
+		}
+		//check not facing edge of map or tile in front not safe, turn
+		if(rc.senseTerrainTile(tileInFront)!=TerrainTile.NORMAL||!tileInFrontSafe){
+			facing = facing.rotateLeft();
+		}else{
+			if(rc.isCoreReady()&&rc.canMove(facing)){
+				rc.move(facing);
+			}
+		}
+	}
+
+	
 }
