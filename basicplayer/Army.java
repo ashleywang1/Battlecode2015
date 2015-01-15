@@ -124,7 +124,6 @@ public class Army {
 		//Map.tryMove(toHelp);
 	}
 
->>>>>>> origin/master
 	public static void defendTower(int help) throws GameActionException {
 		MapLocation myLoc = rc.getLocation();
 		RobotInfo[] allies = rc.senseNearbyRobots(myRange,myTeam);

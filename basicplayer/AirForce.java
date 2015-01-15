@@ -127,7 +127,6 @@ public class AirForce {
 		}
 	}
 
->>>>>>> origin/master
 	private static void defendTower(int help) throws GameActionException {
 		MapLocation myLoc = rc.getLocation();
 		RobotInfo[] allies = rc.senseNearbyRobots(myRange,myTeam);
@@ -162,7 +161,7 @@ public class AirForce {
 		
 	}
 
-	public static void rallyAround(MapLocation rallyPoint) throws GameActionException {
+	private static void rallyContain(MapLocation rallyPoint, int radius) throws GameActionException {
 		MapLocation myLoc = rc.getLocation();
 		if (myLoc.distanceSquaredTo(rallyPoint) > radius) {
 			rallyAround(rallyPoint);
@@ -170,6 +169,7 @@ public class AirForce {
 			Map.randomMove();
 		}
 	}
+	
 	
 	private static void rallyAround(MapLocation rallyPoint) throws GameActionException {
 		int offsetIndex = 0;
