@@ -246,6 +246,23 @@ public class Map {
 		}
 		return tileInFrontSafe;
 	}
+	
+	//This method should return true if robot is sufficiently far enough from enemy towers and HQ to hunt
+	public static boolean inSafeArea() {
+		MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
+		MapLocation myLoc = rc.getLocation();
+		for(MapLocation m: enemyTowers){
+			if(m.distanceSquaredTo(myLoc)<=RobotType.TOWER.attackRadiusSquared + 100){
+				return false;
+			}
+		}
+		if (myLoc.distanceSquaredTo(enemyHQ) < RobotType.HQ.attackRadiusSquared + 100) {
+			return false;
+		}
+		
+		return true;
+	}
+	
 
 	// This method will randomly move in Direction d
 	static void wanderToward(Direction d, double urgency) throws GameActionException {

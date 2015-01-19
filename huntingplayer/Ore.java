@@ -118,12 +118,26 @@ public class Ore {
 		
 		if (oreLoc != 0 && rand.nextDouble() < .9) {
 			MapLocation oreField = Map.intToLoc(oreLoc);
-			//System.out.println(oreField + "is where I'm going");
-			Map.tryMove(myLoc.directionTo(oreField));			
+			
+			Direction toOre = myLoc.directionTo(oreField);
+			
+			if (Map.checkSafety(myLoc, toOre)) {
+				Map.tryMove(toOre);
+			} else {
+				if (rand.nextDouble() < .5) {
+					if (Map.checkSafety(myLoc, toOre.opposite().rotateLeft())) {
+						Map.tryMove(toOre.opposite().rotateLeft());
+					}
+				} else {
+					if (Map.checkSafety(myLoc, toOre.opposite().rotateRight())) {
+						Map.tryMove(toOre.opposite().rotateRight());
+					}
+				}
+				
+			}
 		}
 		else {
 			Map.randomMove();
-			
 		}
 		
 	}

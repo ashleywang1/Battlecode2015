@@ -280,24 +280,12 @@ public class RobotPlayer {
 		if(rc.isCoreReady()&&Clock.getRoundNum()>1800){
 			trySpawn(directions[rand.nextInt(8)], RobotType.HANDWASHSTATION);
 		}
+		Attack.enemyZero();
 		if (rc.isCoreReady()) {
 			int strategy = rc.readBroadcast(Comms.strategy);
-			
-			airforceStrategy();
+			//airforceStrategy();
+			balancedStrategy();
 			//soldierStrategy();
-			//tankStrategy();
-			/*
-			if (strategy == 2) {
-				airforceStrategy();	
-			} else if (strategy == 1) {
-				//rush!!!
-				basicStrategy();	
-			} else if (strategy == 0) {
-				economyStrategy(); //good for large maps
-			} else {
-				basicStrategy(); //good for large maps
-			}
-			*/
 			
 			//centerStrategy(); //good for small maps
 			//techStrategy(); //produces a commander
@@ -306,13 +294,6 @@ public class RobotPlayer {
 			//soldierStrategy();
 			//supplyStrategy();
 			
-			/*
-			if (rc.getHealth() < 20) {
-				int numBeavers = rc.readBroadcast(Comms.beaverCount);
-				rc.broadcast(Comms.beaverCount, numBeavers - 1);
-				System.out.println("BEAVER DOWN! BEAVER DOWN!");
-			}*/
-			Attack.enemyZero();
 			Ore.goProspecting();
 			
 		}
@@ -320,24 +301,27 @@ public class RobotPlayer {
 	
 	//All the strategies
 
-	private static void tankStrategy() throws GameActionException {
+	private static void balancedStrategy() throws GameActionException {
 		int MFnum = rc.readBroadcast(Comms.miningfactoryCount);
 		int helipadNum = rc.readBroadcast(Comms.helipadCount);
 		int supplyNum = rc.readBroadcast(Comms.supplydepotCount);
 		int barracks = rc.readBroadcast(Comms.barracksCount);
 		int TFnum = rc.readBroadcast(Comms.tankfactoryCount);
-		
 		if (MFnum == 0) {
 			becomeHQMiningFactory(MFnum);
+		} else if (helipadNum < 2) {
+			becomeHelipad();
 		} else if(barracks==0){
-			becomeBarracks();
+			becomeHQBarracks(barracks); //just want bashers
 		} else if (TFnum < 3) {
 			becomeTankFactory();
-		} else if (supplyNum < 3) {
+		} else if (MFnum < 2) {
+			becomeMiningFactory(MFnum);
+		} else if (supplyNum < 5) {
 			becomeSuppliers();
 		} else {
 			beaverMine();
-		}
+		}	
 	}
 
 	private static void airforceStrategy() throws GameActionException {
@@ -358,11 +342,6 @@ public class RobotPlayer {
 			becomeHelipad();
 		}
 
-//		 else if (barracks < 4) {
-//			becomeBarracks();
-//		} else {
-//			becomeTankFactory();
-//		}
 	}
 
 	//purely for debugging or optimizing robot types
@@ -399,30 +378,6 @@ public class RobotPlayer {
 	
 	
 
-	private static void basicStrategy() throws GameActionException {
-		int MFnum = rc.readBroadcast(Comms.miningfactoryCount);
-		int numBarracks = rc.readBroadcast(Comms.barracksCount);
-		int numSupplyDepots = rc.readBroadcast(Comms.supplydepotCount);
-		int numHelipads = rc.readBroadcast(Comms.helipadCount);
-		int TFnum = rc.readBroadcast(Comms.tankfactoryCount);
-		
-		if (MFnum <2) {
-			becomeHQMiningFactory(MFnum);
-		} else if (numBarracks ==0){  //make one barrack
-			becomeHQBarracks(numBarracks);
-		}else if (numSupplyDepots==0){
-			becomeSuppliers();
-
-		} else if (TFnum < 10) {
-			if(TFnum >3 && numSupplyDepots<3){
-				becomeSuppliers();
-			}else
-			becomeTankFactory();
-		}
-//		} else if (numHelipads < 2) {
-//			becomeHelipad();
-
-	}
 	
 	private static void economyStrategy() throws GameActionException {
 		int round = Clock.getRoundNum(); //Is there a more efficient place to put this? TODO
@@ -553,12 +508,12 @@ public class RobotPlayer {
 		}
 	}
 	
-	private static void becomeHQBarracks(int numBarracks) throws GameActionException {
+	private static void becomeHQBarracks(int barracks) throws GameActionException {
 		if(rc.getTeamOre() >=300){
 			Direction away = myHQ.directionTo(rc.getLocation());
 			boolean success = tryBuild(away ,RobotType.BARRACKS);
 			if (success) {
-				rc.broadcast(Comms.barracksCount, numBarracks+1);
+				rc.broadcast(Comms.barracksCount, barracks+1);
 			}
 		}
 		
@@ -573,7 +528,6 @@ public class RobotPlayer {
 		int nearbyBarracks = Map.nearbyRobots(neighbors, RobotType.BARRACKS);
 		int dest = rc.readBroadcast(Comms.memory(rc.getID()));
 		MapLocation destination = Map.intToLoc(dest);
-		System.out.println(destination);
 		MapLocation myLoc = rc.getLocation();
 
 		if (nearbyBarracks == 0 && rc.getTeamOre() >= RobotType.BARRACKS.oreCost && myLoc.distanceSquaredTo(destination) < 10) { 
@@ -594,18 +548,28 @@ public class RobotPlayer {
 	}
 
 	private static void becomeTankFactory() throws GameActionException {
-		if (rc.hasBuildRequirements(RobotType.TANKFACTORY)) {
+		int dest = rc.readBroadcast(Comms.memory(rc.getID()));
+		MapLocation destination = Map.intToLoc(dest);
+		MapLocation myLoc = rc.getLocation();
+		RobotInfo[] neighbors = rc.senseNearbyRobots(myRange);
+		if (rc.hasBuildRequirements(RobotType.TANKFACTORY) && neighbors.length < 2 && myLoc.distanceSquaredTo(destination) < 10) {
 			if (rc.getTeamOre() > RobotType.TANKFACTORY.oreCost) {
 				boolean success = tryBuild(directions[rand.nextInt(8)], RobotType.TANKFACTORY);
 				if (success) {
 					int TFnum = rc.readBroadcast(Comms.tankfactoryCount);
 					rc.broadcast(Comms.tankfactoryCount, TFnum + 1);
-				} 
-				
-			}	else {
+				}
+			} else {
 				//Map.beaverMove();
-				beaverMine();
+				//beaverMine();
+				System.out.println("This should NEVER happen");
 			}
+		} else {
+			if (myLoc.distanceSquaredTo(destination) > 10) { //move to assigned tower
+				Map.tryMove(destination);
+			} else {
+				beaverMine();
+			}	
 		}
 	}
 	

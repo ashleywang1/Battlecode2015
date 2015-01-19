@@ -37,7 +37,6 @@ public class Attack {
 				}
 			}
 			if (enemyToHunt != -1) {
-				System.out.println(enemyType);
 				//update location
 				enemyLocation = findEnemyRobotNear(enemyLocation, enemyToHunt);
 				if (enemyLocation == null) {
@@ -86,8 +85,12 @@ public class Attack {
 			
 			if (enemy.type == RobotType.HQ || enemy.type == RobotType.TOWER) {
 				continue;
+			} else if (enemy.type != RobotType.MINER) { //prioritize armies over miners
+				enemyToHunt = enemy.ID;
+				enemyLocation = enemy.location;
+				enemyType = enemy.type;
+				break;
 			} else {
-				System.out.println(enemyType + " shoudl not be a HQ or Tower!!");
 				enemyToHunt = enemy.ID;
 				enemyLocation = enemy.location;
 				enemyType = enemy.type;

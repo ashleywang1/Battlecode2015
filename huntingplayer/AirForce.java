@@ -30,7 +30,7 @@ public class AirForce {
 	public static void runHelipad() throws GameActionException {
 		if (rc.isCoreReady()) {
 			int numDrones = rc.readBroadcast(Comms.droneCount);
-			if (rc.getTeamOre() > RobotType.DRONE.oreCost && numDrones < 100) {
+			if (rc.getTeamOre() > RobotType.DRONE.oreCost) { //&& numDrones < 100
 				if (RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.DRONE)) {
 					
 					rc.broadcast(Comms.droneCount, numDrones + 1);
@@ -51,13 +51,13 @@ public class AirForce {
 	}
 
 	public static void runDrone() throws GameActionException {
-		//Attack.attackTower();
-		Attack.hunt();
-		/*
-		if (rc.isCoreReady()) {
-			//Map.tryMove(enemyHQ);
+		if (Map.inSafeArea()) {
+			Attack.hunt();	
+		} else {
+			Attack.attackTower();
 			moveAirForce();
-		}*/
+		}
+		
 	}
 	
 	public static void moveAirForce() throws GameActionException {
@@ -72,18 +72,19 @@ public class AirForce {
 			int helpTower = rc.readBroadcast(Comms.towerDistressCall);
 			boolean outnumbered = (rc.senseTowerLocations().length < rc.senseEnemyTowerLocations().length + 1);
 			int numDrones = rc.readBroadcast(Comms.droneCount);
-			containHQ();
-			/*
+			//
+			
 			if (outnumbered && Clock.getRoundNum() > 1800) {
 				droneRush();
 			} else if (helpTower != 0) {
 				defendTower(helpTower);
-			} else if (numDrones < 50 && strategy != 1) { 
-				rallyAround(myHQ);
+			} else if (numDrones < 100 && strategy != 1) { 
+				//rallyAround(myHQ);
+				containHQ();
 			} else { //RUSH
-				droneRush();
+				containHQ();
 				
-			}*/
+			}
 		}
 		
 	}

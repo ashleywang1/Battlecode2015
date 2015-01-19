@@ -77,10 +77,12 @@ public class Army {
 	}
 
 	public static void runTank() throws GameActionException {
-		Ore.goProspecting();
-		//Attack.enemyZero();
-		Attack.hunt();
-		//moveArmy();
+		if (Map.inSafeArea()) {
+			Attack.hunt();	
+		} else {
+			Attack.attackTower();
+			moveArmy();
+		}
 		
 	}
 	
@@ -97,8 +99,7 @@ public class Army {
 			int helpTower = rc.readBroadcast(Comms.towerDistressCall);
 			boolean outnumbered = (rc.senseTowerLocations().length < rc.senseEnemyTowerLocations().length + 1);
 	
-			AirForce.containHQ();
-			/*
+			
 			if (outnumbered && Clock.getRoundNum() > 1800) {
 				groundRush();
 			} else if (helpTower != 0 && rc.getType() == RobotType.SOLDIER) {
@@ -106,12 +107,11 @@ public class Army {
 			} else if (strategy == 1) { //RUSH!
 				groundRush();
 			} else if (earlyDefense != 0) {
-				shutDown(earlyDefense);
+				AirForce.containHQ();
 			} else {
-				//shut down TODO
-				Map.randomMove();
+				AirForce.containHQ();
 			}
-			*/
+			
 		}
 		
 	}
