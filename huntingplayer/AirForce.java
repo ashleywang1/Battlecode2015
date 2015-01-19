@@ -10,6 +10,7 @@ import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.Team;
+import battlecode.common.TerrainTile;
 
 public class AirForce {
 
@@ -26,6 +27,7 @@ public class AirForce {
 	
 	static Random rand = RobotPlayer.rand;
 	static Direction[] directions = RobotPlayer.directions;
+	static int rotation = -1;
 
 	public static void runHelipad() throws GameActionException {
 		if (rc.isCoreReady()) {
@@ -72,50 +74,40 @@ public class AirForce {
 			int helpTower = rc.readBroadcast(Comms.towerDistressCall);
 			boolean outnumbered = (rc.senseTowerLocations().length < rc.senseEnemyTowerLocations().length + 1);
 			int numDrones = rc.readBroadcast(Comms.droneCount);
-			//
+			int droneTarget = rc.readBroadcast(Comms.droneTarget);
+			int droneDefense = rc.readBroadcast(Comms.droneRallyPoint);
 			
 			if (outnumbered && Clock.getRoundNum() > 1800) {
 				droneRush();
 			} else if (helpTower != 0) {
 				defendTower(helpTower);
-			} else if (numDrones < 100 && strategy != 1) { 
-				//rallyAround(myHQ);
-				containHQ();
+			} else if (droneDefense != 0 && numDrones < 20) {
+				rallyAround(myHQ);
+			} else if (numDrones < 5 && strategy != 1) { 
+				//
+				//containHQ();
+				protectMiners();
 			} else { //RUSH
 				containHQ();
-				
 			}
 		}
 		
 	}
 	
-	public static void containHQ() throws GameActionException {
-		//rallyContain(enemyHQ, RobotType.HQ.attackRadiusSquared + 100);
+	public static void containHQ() throws GameActionException { //do what the WarMachine did
+		
 		MapLocation myLoc = rc.getLocation();
 		MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
+		int distToEnemyHQ = myLoc.distanceSquaredTo(enemyHQ);
+		//Map.safeMove(enemyHQ);
+		//rallyContain(enemyHQ, RobotType.HQ.attackRadiusSquared + 4);
 		
-		if (myLoc.distanceSquaredTo(enemyHQ) > RobotType.HQ.attackRadiusSquared + 10) {
-			Direction toHQ = myLoc.directionTo(enemyHQ);
-			if (Map.checkSafety(myLoc, toHQ)) {
-				Map.tryMove(toHQ);
-			} else {
-				if (rand.nextDouble() < .5) {
-					if (Map.checkSafety(myLoc, toHQ.opposite().rotateLeft())) {
-						Map.tryMove(toHQ.opposite().rotateLeft());
-					}
-				} else {
-					if (Map.checkSafety(myLoc, toHQ.opposite().rotateRight())) {
-						Map.tryMove(toHQ.opposite().rotateRight());
-					}
-				}
-				
-			}
+		if (distToEnemyHQ > RobotType.HQ.attackRadiusSquared + 5) {
+			Map.safeMove(enemyHQ);
 		}
-		
-		
 	}
 
-	private static void protectMiners() throws GameActionException {
+	public static void protectMiners() throws GameActionException {
 		int oreLoc = rc.readBroadcast(Comms.bestOreFieldLoc);
 		int minerEnemies = rc.readBroadcast(Comms.enemiesNearMiners);
 		int numDrones = rc.readBroadcast(Comms.droneCount);
@@ -130,12 +122,11 @@ public class AirForce {
 		}
 	}
 
-	private static void defendTower(int help) throws GameActionException {
+	public static void defendTower(int help) throws GameActionException {
 		MapLocation myLoc = rc.getLocation();
 		RobotInfo[] allies = rc.senseNearbyRobots(myRange,myTeam);
 		MapLocation toHelp = Map.intToLoc(help);
 		Map.tryMove(toHelp);
-		
 	}
 
 	private static void droneRush() throws GameActionException {
@@ -166,15 +157,27 @@ public class AirForce {
 
 	private static void rallyContain(MapLocation rallyPoint, int radius) throws GameActionException {
 		MapLocation myLoc = rc.getLocation();
+		
+/*		
 		if (myLoc.distanceSquaredTo(rallyPoint) > radius) {
 			rallyAround(rallyPoint);
 		} else {
-			Map.randomMove();
-		}
+			//Map.randomMove();
+			Direction angle = rallyPoint.directionTo(myLoc);
+			if (rotation == -1) {
+				angle = angle.rotateRight();
+			} else {
+				angle = angle.rotateLeft();
+			}
+			Map.tryMove(rallyPoint.add(angle.rotateLeft(), radius));
+			if (rc.senseTerrainTile(myLoc.add(angle)) == TerrainTile.OFF_MAP) {
+				rotation = -1*rotation;
+			}
+		}*/
 	}
 	
 	
-	private static void rallyAround(MapLocation rallyPoint) throws GameActionException {
+	public static void rallyAround(MapLocation rallyPoint) throws GameActionException {
 		int offsetIndex = 0;
 		int[] offsets = {0,1,-1,2,-2};
 		Direction toRallyPoint = rc.getLocation().directionTo(rallyPoint);

@@ -3,6 +3,8 @@ package huntingplayer;
 import java.util.ArrayList;
 import java.util.Random;
 
+import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
+
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
@@ -64,6 +66,56 @@ public class Map {
 		}
 		if (offsetIndex < 5) {
 			rc.move(directions[(dirint+sign*offsets[offsetIndex]+8)%8]);
+		}
+	}
+	
+	public static void safeMove(MapLocation dest) throws GameActionException {
+		MapLocation myLoc = rc.getLocation();
+		Direction toDest = myLoc.directionTo(dest);
+
+		if (Map.checkSafety(myLoc, toDest) && rc.canMove(toDest)) {
+			rc.move(toDest);
+		} else {
+			if (rand.nextDouble() < .5) {
+				if (Map.checkSafety(myLoc, toDest.opposite().rotateLeft())&& rc.canMove(toDest.opposite().rotateLeft())) {
+					rc.move(toDest.opposite().rotateLeft());
+				}
+			} else {
+				if (Map.checkSafety(myLoc, toDest.opposite().rotateRight()) && rc.canMove(toDest.opposite().rotateRight())) {
+					rc.move(toDest.opposite().rotateRight());
+				}
+			}
+		}
+		
+	}
+	
+	public static void Encircle(MapLocation dest) throws GameActionException {
+		MapLocation myLoc = rc.getLocation();
+		Direction toDest = myLoc.directionTo(dest);
+		Direction safeDir = directions[rand.nextInt(8)];
+		//There is a better way to write this but I am stupid and can't do it
+		if (Map.checkSafety(myLoc, toDest)) {
+			safeDir = toDest;
+		} else if (Map.checkSafety(myLoc, toDest.rotateLeft())) {
+			safeDir = toDest.rotateLeft();
+		} else if (Map.checkSafety(myLoc, toDest.rotateLeft().rotateLeft())) {
+			safeDir = toDest.rotateLeft().rotateLeft();
+		} else if (Map.checkSafety(myLoc, toDest.rotateLeft().rotateLeft().rotateLeft())) {
+			safeDir = toDest.rotateLeft().rotateLeft().rotateLeft();
+		} else if (Map.checkSafety(myLoc, toDest.opposite())) {
+			safeDir = toDest.opposite();
+		}  else if (Map.checkSafety(myLoc, toDest.opposite().rotateLeft())) {
+			safeDir = toDest.opposite().rotateLeft();
+		}
+		else {
+			Direction d = findSafeTile();
+			if (Map.checkSafety(myLoc, d)) { //toDest.rotateLeft().rotateLeft(
+				safeDir = d;
+			}
+		}
+		
+		if (rc.canMove(safeDir)) {
+			rc.move(safeDir);
 		}
 	}
 	
@@ -239,10 +291,13 @@ public class Map {
 		boolean tileInFrontSafe = true;
 		MapLocation tileInFront = myLoc.add(dir);
 		for(MapLocation m: enemyTowers){
-			if(m.distanceSquaredTo(tileInFront)<=RobotType.TOWER.attackRadiusSquared + 25){
+			if(m.distanceSquaredTo(tileInFront)<=RobotType.TOWER.attackRadiusSquared + 4){
 				tileInFrontSafe = false;
 				break;
 			}
+		}
+		if (enemyHQ.distanceSquaredTo(tileInFront) < RobotType.HQ.attackRadiusSquared + 4) {
+			tileInFrontSafe = false;
 		}
 		return tileInFrontSafe;
 	}
@@ -252,17 +307,21 @@ public class Map {
 		MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
 		MapLocation myLoc = rc.getLocation();
 		for(MapLocation m: enemyTowers){
-			if(m.distanceSquaredTo(myLoc)<=RobotType.TOWER.attackRadiusSquared + 100){
+			if(m.distanceSquaredTo(myLoc)<=RobotType.TOWER.attackRadiusSquared + 25){
 				return false;
 			}
 		}
-		if (myLoc.distanceSquaredTo(enemyHQ) < RobotType.HQ.attackRadiusSquared + 100) {
+		if (myLoc.distanceSquaredTo(enemyHQ) < RobotType.HQ.attackRadiusSquared + 25) {
 			return false;
 		}
 		
 		return true;
 	}
 	
+	//This method should return a list of all the directions that are unsafe
+	public static void allBlockedTiles() {
+		//TODO
+	}
 
 	// This method will randomly move in Direction d
 	static void wanderToward(Direction d, double urgency) throws GameActionException {

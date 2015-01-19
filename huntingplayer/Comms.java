@@ -40,7 +40,8 @@ public class Comms {
 	
 	//Drone information
 	public static final int droneRallyPoint = 303;
-	public static final int droneTarget = 303;
+	public static final int droneTarget = 304;
+	//public static final int droneRotation = 305;
 	
 	//Supply information
 	public static final int lowestBarracksSupply = 16;

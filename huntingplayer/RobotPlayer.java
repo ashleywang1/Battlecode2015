@@ -176,12 +176,12 @@ public class RobotPlayer {
 		int army = bashers + tanks + drones/2 - casualties;
 		
 		if (towerThreat >= 10 && army < (25 + 2*towerThreat) || round < 500) { //improve this formula
-            strategy = 2;
-//			if (navigability < .94) {
-//				strategy = 2;	
-//			} else {
-//				strategy = 0;
-//			}
+            //strategy = 2;
+			if (navigability == 1) {
+				strategy = 0;	
+			} else {
+				strategy = 2;
+			}
             
         } else if (army > (25 + 2*towerThreat)) {
             strategy = 1;
@@ -284,7 +284,8 @@ public class RobotPlayer {
 		if (rc.isCoreReady()) {
 			int strategy = rc.readBroadcast(Comms.strategy);
 			//airforceStrategy();
-			balancedStrategy();
+			//balancedStrategy();
+			tankStrategy();
 			//soldierStrategy();
 			
 			//centerStrategy(); //good for small maps
@@ -300,6 +301,30 @@ public class RobotPlayer {
 	}
 	
 	//All the strategies
+
+	private static void tankStrategy() throws GameActionException {
+		int MFnum = rc.readBroadcast(Comms.miningfactoryCount);
+		int helipadNum = rc.readBroadcast(Comms.helipadCount);
+		int supplyNum = rc.readBroadcast(Comms.supplydepotCount);
+		int barracks = rc.readBroadcast(Comms.barracksCount);
+		int TFnum = rc.readBroadcast(Comms.tankfactoryCount);
+		if (MFnum == 0) {
+			becomeHQMiningFactory(MFnum);
+		} else if(barracks==0){
+			becomeHQBarracks(barracks); //just want bashers
+		} else if (TFnum < 3) {
+			becomeTankFactory();
+		} else if (helipadNum < 1) {
+			becomeHelipad();
+		} else if (MFnum < 2) {
+			becomeMiningFactory(MFnum);
+		} else if (supplyNum < 5) {
+			becomeSuppliers();
+		} else {
+			beaverMine();
+			//Map.tryMove(myHQ); //defend HQ
+		}	
+	}
 
 	private static void balancedStrategy() throws GameActionException {
 		int MFnum = rc.readBroadcast(Comms.miningfactoryCount);
@@ -321,6 +346,7 @@ public class RobotPlayer {
 			becomeSuppliers();
 		} else {
 			beaverMine();
+			//Map.tryMove(myHQ); //defend HQ
 		}	
 	}
 
@@ -686,15 +712,15 @@ public class RobotPlayer {
 			if (enemies.length > 0 && earlyRally == 0) {
 				//broadcast that we're on the FULL defensive TODO
 				//rc.broadcast(Comms.strategy, 3);
-				//rc.broadcast(Comms.defensiveRally, Map.locToInt(enemies[0].location));
+				rc.broadcast(Comms.defensiveRally, Map.locToInt(enemies[0].location));
 			}
 		}
 		if (type == RobotType.MINER && rc.readBroadcast(Comms.enemiesNearMiners) == 0 && enemies.length > 3) {
 			rc.broadcast(Comms.enemiesNearMiners, Map.locToInt(myLoc));
 		} else if (type == RobotType.DRONE && enemies.length > 0) {
-			if (enemies.length > 3) {
-				//System.out.println("Drone found more than 3 enemies. Run away?");
+			if (enemies.length > 3) { //we are being rushed, defend
 				rc.broadcast(Comms.droneRallyPoint, Map.locToInt(myLoc));
+				
 			} else {
 				for (RobotInfo target: enemies) {
 					
