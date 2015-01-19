@@ -45,8 +45,8 @@ public class Army {
 
 	public static void runSoldier() throws GameActionException {
 		RobotInfo [] enemies = Attack.getEnemiesInAttackingRange(RobotType.SOLDIER);
-		//Attack.attackTower();
-		Attack.hunt();
+		Attack.attackTower();
+		
 		moveArmy();
 		
 		if (rc.getHealth() < 1) {
@@ -68,7 +68,7 @@ public class Army {
 		int TFnum = rc.readBroadcast(Comms.tankfactoryCount);
 		if (rc.isCoreReady()) {
 			int tanks = rc.readBroadcast(Comms.tanksCount);
-			if (rc.getTeamOre() > RobotType.TANK.oreCost && TFnum>3 && tanks < 50) {
+			if (rc.getTeamOre() > RobotType.TANK.oreCost) { //&& TFnum>3 && tanks < 50
 				if (RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.TANK)) {
 					rc.broadcast(Comms.tanksCount, tanks + 1);
 				}
@@ -80,7 +80,7 @@ public class Army {
 		Ore.goProspecting();
 		//Attack.enemyZero();
 		Attack.hunt();
-		moveArmy();
+		//moveArmy();
 		
 	}
 	

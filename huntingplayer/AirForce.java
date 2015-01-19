@@ -51,11 +51,13 @@ public class AirForce {
 	}
 
 	public static void runDrone() throws GameActionException {
-		Attack.attackTower();
+		//Attack.attackTower();
+		Attack.hunt();
+		/*
 		if (rc.isCoreReady()) {
 			//Map.tryMove(enemyHQ);
 			moveAirForce();
-		}
+		}*/
 	}
 	
 	public static void moveAirForce() throws GameActionException {

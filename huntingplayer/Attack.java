@@ -33,13 +33,11 @@ public class Attack {
 			if (enemyToHunt == -1) {
 				RobotInfo[] enemies = rc.senseNearbyRobots(myRange * 2, enemyTeam);
 				if (enemies.length > 0) {
-					RobotInfo enemy = enemies[rand.nextInt(enemies.length)];
-					enemyToHunt = enemy.ID;
-					enemyLocation = enemy.location;
-					enemyType = enemy.type;
+					chooseTarget(enemies);
 				}
 			}
 			if (enemyToHunt != -1) {
+				System.out.println(enemyType);
 				//update location
 				enemyLocation = findEnemyRobotNear(enemyLocation, enemyToHunt);
 				if (enemyLocation == null) {
@@ -69,8 +67,30 @@ public class Attack {
 					}
 				}
 			}
-			else {
-				Map.wanderTo(RobotPlayer.enemyHQ, 0.6);
+			else { //didn't detect any enemies
+				RobotType type = rc.getType();
+				if (type == RobotType.SOLDIER || type == RobotType.TANK) {
+					Army.moveArmy();	
+				} else {
+					AirForce.moveAirForce();
+				}
+				
+			}
+		}
+	}
+
+	private static void chooseTarget(RobotInfo[] enemies) {
+		
+		
+		for (RobotInfo enemy: enemies) {
+			
+			if (enemy.type == RobotType.HQ || enemy.type == RobotType.TOWER) {
+				continue;
+			} else {
+				System.out.println(enemyType + " shoudl not be a HQ or Tower!!");
+				enemyToHunt = enemy.ID;
+				enemyLocation = enemy.location;
+				enemyType = enemy.type;
 			}
 		}
 	}
