@@ -40,18 +40,23 @@ public class Comms {
 	
 	//Drone information
 	public static final int droneRallyPoint = 303;
-	public static final int droneTarget = 304;
-	//public static final int droneRotation = 305;
+	public static final int droneTarget = 303;
 	
 	//Supply information
 	public static final int lowestBarracksSupply = 16;
 	public static final int lowestBarracksSupplyLoc = 17;
 	public static final int lowestMiningFactorySupply = 18;
 	public static final int lowestMiningFactorySupplyLoc = 19;
-	public static final int lowestSoldierSupply = 20;
-	public static final int lowestSoldierSupplyLoc = 21;
+	public static final int lowestBasherSupply = 20;
+	public static final int lowestBasherSupplyLoc = 21;
 	public static final int lowestMinerSupply = 22;
 	public static final int lowestMinerSupplyLoc = 23;
+	public static final int lowestTankSupply = 28;
+	public static final int lowestTankSupplyLoc = 29;
+	public static final int lowestHelipadSupply = 30;
+	public static final int lowestHelipadSupplyLoc = 31;
+	public static final int lowestTankFactorySupply = 32;
+	public static final int lowestTankFactorySupplyLoc = 33;
 	
 	
 	//strategy
