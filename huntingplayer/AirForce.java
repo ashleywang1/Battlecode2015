@@ -10,7 +10,6 @@ import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.Team;
-import battlecode.common.TerrainTile;
 
 public class AirForce {
 
@@ -32,28 +31,47 @@ public class AirForce {
 	public static void runHelipad() throws GameActionException {
 		if (rc.isCoreReady()) {
 			int numDrones = rc.readBroadcast(Comms.droneCount);
-			if (rc.getTeamOre() > RobotType.DRONE.oreCost) { //&& numDrones < 100
-				if (RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.DRONE)) {
-					
-					rc.broadcast(Comms.droneCount, numDrones + 1);
-				}
+			if (rc.getTeamOre() > RobotType.DRONE.oreCost + RobotType.TANK.oreCost && numDrones < 20) {
+				RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.DRONE);
 			}
 		}
 		
 	}
 	
-	public static void runLauncher() {
-		// TODO Auto-generated method stub
+	public static void runLauncher() throws GameActionException {
+		if (rc.isCoreReady()) {
+			Attack.launchMissiles();
+			droneRush();
+				
+		}
+	}
+	
+	public static void runMissile() throws GameActionException {
+		if(rc.isCoreReady()){
+			System.out.println("Missile headed toward tower from " + rc.getLocation());
+			rc.move(rc.getLocation().directionTo(rc.senseEnemyTowerLocations()[0]));
+		}
 		
 	}
 
-	public static void run16Lab() {
-		// TODO Auto-generated method stub
+	public static void run16Lab() throws GameActionException {
+		
+		if(rc.isCoreReady()){
+			int numLaunchers = rc.readBroadcast(Comms.launcherCount);
+			if (rc.getTeamOre() > RobotType.LAUNCHER.oreCost) {
+			if (RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.LAUNCHER)) {
+				
+				rc.broadcast(Comms.launcherCount, numLaunchers + 1);
+			}
+		}
+		}
 		
 	}
 
 	public static void runDrone() throws GameActionException {
-		if (Map.inSafeArea()) {
+		rc.senseNearbyRobots(myRange*2, myTeam);
+		
+		if (Map.inSafeArea(rc.getLocation())) {
 			Attack.hunt();	
 		} else {
 			Attack.attackTower();
@@ -64,17 +82,12 @@ public class AirForce {
 	
 	public static void moveAirForce() throws GameActionException {
 		
-		int strategy = rc.readBroadcast(200);
-		MapLocation myLoc = rc.getLocation();
-		int rushOver = rc.readBroadcast(Comms.rushOver);
-		//System.out.println("soldiers get that strategy is : " + strategy + " and rushOver is : " + rushOver);
-		
 		if (rc.isCoreReady()) {
 			
 			int helpTower = rc.readBroadcast(Comms.towerDistressCall);
 			boolean outnumbered = (rc.senseTowerLocations().length < rc.senseEnemyTowerLocations().length + 1);
 			int numDrones = rc.readBroadcast(Comms.droneCount);
-			int droneTarget = rc.readBroadcast(Comms.droneTarget);
+			//int droneTarget = rc.readBroadcast(Comms.droneTarget);
 			int droneDefense = rc.readBroadcast(Comms.droneRallyPoint);
 			
 			if (outnumbered && Clock.getRoundNum() > 1800) {
@@ -82,13 +95,14 @@ public class AirForce {
 			} else if (helpTower != 0) {
 				defendTower(helpTower);
 			} else if (droneDefense != 0 && numDrones < 20) {
-				rallyAround(myHQ);
-			} else if (numDrones < 5 && strategy != 1) { 
-				//
-				//containHQ();
+				int radius = RobotType.HQ.attackRadiusSquared + 25;
+				if (rc.getLocation().distanceSquaredTo(myHQ) < radius) {
+					Map.randomMove();
+				} else {
+					Map.Encircle(myHQ, radius);	
+				}
+			} else {
 				protectMiners();
-			} else { //RUSH
-				Attack.containHQ();
 			}
 		}
 		
@@ -98,21 +112,29 @@ public class AirForce {
 	public static void protectMiners() throws GameActionException {
 		int oreLoc = rc.readBroadcast(Comms.bestOreFieldLoc);
 		int minerEnemies = rc.readBroadcast(Comms.enemiesNearMiners);
-		int numDrones = rc.readBroadcast(Comms.droneCount);
 		
-		if (oreLoc != 0 && minerEnemies == 0) {
-			//rallyAround(Map.intToLoc(oreLoc));
-			rallyContain(Map.intToLoc(oreLoc), numDrones);
-		} else if (minerEnemies != 0) {
-			rallyAround(Map.intToLoc(minerEnemies));
+		//supply them too
+		if (rc.getSupplyLevel() < 200) {
+			Map.safeMove(myHQ);
 		} else {
-			Map.randomMove();
+			if (oreLoc != 0 && minerEnemies == 0) {
+				int radius = 25;
+				MapLocation dest = Map.intToLoc(oreLoc);
+				if (rc.getLocation().distanceSquaredTo(dest) < radius) {
+					Map.randomMove();
+				} else {
+					Map.safeMove(dest);
+				}
+			} else if (minerEnemies != 0) {
+				rallyAround(Map.intToLoc(minerEnemies));
+			} else {
+				Map.randomMove();
+			}	
 		}
+		
 	}
 
 	public static void defendTower(int help) throws GameActionException {
-		MapLocation myLoc = rc.getLocation();
-		RobotInfo[] allies = rc.senseNearbyRobots(myRange,myTeam);
 		MapLocation toHelp = Map.intToLoc(help);
 		Map.tryMove(toHelp);
 	}
@@ -122,9 +144,6 @@ public class AirForce {
 		MapLocation myLoc = rc.getLocation();
 		MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
 		RobotInfo[] allies = rc.senseNearbyRobots(myRange,myTeam);
-		int rushStart = rc.readBroadcast(Comms.rushStartRound);
-		int rushOver = rc.readBroadcast(Comms.rushOver);
-		int strategy = rc.readBroadcast(Comms.strategy);
 		
 		MapLocation destination = enemyHQ;
 		if (enemyTowers.length > 0) {
@@ -144,24 +163,8 @@ public class AirForce {
 	}
 
 	private static void rallyContain(MapLocation rallyPoint, int radius) throws GameActionException {
-		MapLocation myLoc = rc.getLocation();
 		
-/*		
-		if (myLoc.distanceSquaredTo(rallyPoint) > radius) {
-			rallyAround(rallyPoint);
-		} else {
-			//Map.randomMove();
-			Direction angle = rallyPoint.directionTo(myLoc);
-			if (rotation == -1) {
-				angle = angle.rotateRight();
-			} else {
-				angle = angle.rotateLeft();
-			}
-			Map.tryMove(rallyPoint.add(angle.rotateLeft(), radius));
-			if (rc.senseTerrainTile(myLoc.add(angle)) == TerrainTile.OFF_MAP) {
-				rotation = -1*rotation;
-			}
-		}*/
+		//TODO
 	}
 	
 	
@@ -170,7 +173,6 @@ public class AirForce {
 		int[] offsets = {0,1,-1,2,-2};
 		Direction toRallyPoint = rc.getLocation().directionTo(rallyPoint);
 		int dirint = Map.directionToInt(toRallyPoint);
-		boolean blocked = false;
 		while (offsetIndex < 5 && !rc.canMove(directions[(dirint+offsets[offsetIndex]+8)%8])) {
 			offsetIndex++;
 		}

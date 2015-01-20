@@ -25,106 +25,111 @@ public class Army {
 			if (Clock.getRoundNum() > 200) {
 				int helpTower = rc.readBroadcast(Comms.towerDistressCall);
 				if (rc.getTeamOre() > RobotType.BASHER.oreCost && helpTower != 0){
-					if (RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.BASHER)) {
-						int numBashers = rc.readBroadcast(Comms.basherCount);
-						rc.broadcast(Comms.basherCount, numBashers + 1);
-					}
-				//int numSupplyDepots = rc.readBroadcast(Comms.supplydepotCount);
-				//int numTankFactories = rc.readBroadcast(Comms.tankfactoryCount);
+					RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.BASHER);
 				}
-				/*else if (rc.getTeamOre() > RobotType.SOLDIER.oreCost) {
-					if (RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.SOLDIER)) {
-						int numSoldiers = rc.readBroadcast(Comms.soldierCount);
-						rc.broadcast(Comms.soldierCount, numSoldiers + 1);
-					}
-				} */
 			}
 		}
-	      
-        //Supply.requestSupply();
 
 	}
 
 	public static void runSoldier() throws GameActionException {
-		RobotInfo [] enemies = Attack.getEnemiesInAttackingRange(RobotType.SOLDIER);
+		
 		Attack.attackTower();
-		
 		moveArmy();
-		//they're kinda useless
-		
 		
 	}
 
 	public static void runBasher() throws GameActionException {
-		int helpTower = rc.readBroadcast(Comms.towerDistressCall);
-		AirForce.defendTower(helpTower);
-		//moveArmy();
+		//int helpTower = rc.readBroadcast(Comms.towerDistressCall);
+		if (rc.isCoreReady()) {
+			Map.Encircle(myHQ, RobotType.HQ.attackRadiusSquared + 10); //with a wider radius TODO	
+		}
 	}
 
 
 	public static void runTankFactory() throws GameActionException {
-		int TFnum = rc.readBroadcast(Comms.tankfactoryCount);
 		if (rc.isCoreReady()) {
 			int tanks = rc.readBroadcast(Comms.tanksCount);
 			if (rc.getTeamOre() > RobotType.TANK.oreCost) { //&& TFnum>3 && tanks < 50
 				if (RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.TANK)) {
-					rc.broadcast(Comms.tanksCount, tanks + 1);
+					RobotInfo[] defenders = rc.senseNearbyRobots(myHQ, RobotType.HQ.sensorRadiusSquared*2, myTeam);
+					if ( Map.nearbyRobots(defenders, RobotType.TANK) < 3) {
+						rc.broadcast(Comms.TFtoSpawnedTank, 1); //make the tank a defender
+					}
 				}
 			}
 		}
 	}
 
 	public static void runTank() throws GameActionException {
-		if (Map.inSafeArea()) {
-			Attack.hunt(); //if no enemy in sight, moveArmy
-		} else {
-			Attack.attackTower();
-			moveArmy();
+		if (rc.isCoreReady()) {
+			if (Map.inSafeArea(rc.getLocation())) {
+				Attack.hunt(); //if no enemy in sight, moveArmy
+			} else {
+				Attack.attackTower();
+				moveArmy();
+			}	
 		}
-		
+				
 	}
 	
 	public static void moveArmy() throws GameActionException {
 		
-		int strategy = rc.readBroadcast(200);
-		MapLocation myLoc = rc.getLocation();
-		int rushOver = rc.readBroadcast(Comms.rushOver);
-		
-		//System.out.println("soldiers get that strategy is : " + strategy + " and rushOver is : " + rushOver);
-		
 		if (rc.isCoreReady()) {
 			
-			int helpTower = rc.readBroadcast(Comms.towerDistressCall);
-			boolean outnumbered = (rc.senseTowerLocations().length < rc.senseEnemyTowerLocations().length + 1);
-			int earlyDefense = rc.readBroadcast(Comms.defensiveRally);
 			
-			if (outnumbered && Clock.getRoundNum() > 1800) {
-				groundRush();
-			} else if (helpTower != 0 && rc.getType() == RobotType.SOLDIER) {
-				defendTower(helpTower);
-			} else if (earlyDefense != 0 && Clock.getRoundNum() < 500) {
-				AirForce.rallyAround(Map.intToLoc(earlyDefense));
+			int status = rc.readBroadcast(Comms.memory(rc.getID()));
+			if (status == 1) { //defend the HQ
+				tankDefender();
 			} else {
-				Attack.containHQ();
+				tankAttacker();
 			}
-			
 		}
 		
 	}
 
-	private static void shutDown(int enemyDetected) throws GameActionException {
-		MapLocation breach = Map.intToLoc(enemyDetected);
-		if (breach.distanceSquaredTo(myHQ) > breach.distanceSquaredTo(enemyHQ)){ //attack
-			Map.tryMove(breach);
+	private static void tankAttacker() throws GameActionException {
+
+		int helpTower = rc.readBroadcast(Comms.towerDistressCall);
+		boolean outnumbered = (rc.senseTowerLocations().length < rc.senseEnemyTowerLocations().length + 1);
+		int earlyDefense = rc.readBroadcast(Comms.defensiveRally);
+		if (outnumbered && Clock.getRoundNum() > 1800) {
+			groundRush();
+		} else if (helpTower != 0 && rc.getType() == RobotType.SOLDIER) {
+			defendTower(helpTower);
+		} else if (earlyDefense != 0 && Clock.getRoundNum() < 500) {
+			MapLocation firstContact = Map.intToLoc(earlyDefense);
+			if (Map.inSafeArea(firstContact)) {
+				AirForce.rallyAround(firstContact);	
+			} else {
+				containHQ();
+			}
 		} else {
-			Map.tryMove(myHQ);
-		}
-		//Map.tryMove(toHelp);
+			containHQ();
+		}	
+		
 	}
 
-	public static void defendTower(int help) throws GameActionException {
+	private static void tankDefender() throws GameActionException {
+		int radius = RobotType.HQ.attackRadiusSquared;
+		if (rc.getLocation().distanceSquaredTo(myHQ) < radius) {
+			Map.randomMove();
+		} else {
+			Map.Encircle(myHQ, radius);	
+		}
+		
+	}
+
+	public static void containHQ() throws GameActionException { //do what the WarMachine did
+		
 		MapLocation myLoc = rc.getLocation();
-		RobotInfo[] allies = rc.senseNearbyRobots(myRange,myTeam);
+		int distToEnemyHQ = myLoc.distanceSquaredTo(enemyHQ);
+		
+		if (distToEnemyHQ > RobotType.HQ.attackRadiusSquared + 1) {
+			Map.Encircle(enemyHQ, 0);
+		}
+	}
+	public static void defendTower(int help) throws GameActionException {
 		MapLocation toHelp = Map.intToLoc(help);
 		Map.tryMove(toHelp);
 		RobotInfo myTower = null;
@@ -143,41 +148,22 @@ public class Army {
 
 		MapLocation myLoc = rc.getLocation();
 		MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
-		RobotInfo[] allies = rc.senseNearbyRobots(myRange,myTeam);
-		int rushStart = rc.readBroadcast(Comms.rushStartRound);
+		RobotInfo[] allies = rc.senseNearbyRobots(myRange*2,myTeam);
 		
 		//set destination
 		MapLocation destination = enemyHQ;
 		if (enemyTowers.length > 0) {
 			//destination = enemyTowers[0];
 			destination = Map.nearestTower(enemyTowers);
-			//attack the closest one if they're all together TODO
+			//attack the closest one if they're all together TODO Kelly?
 		}
 		
 		//rally around the destination then move
-		if (myLoc.distanceSquaredTo(destination) > RobotType.TOWER.attackRadiusSquared + 9 ||
-				allies.length > 3) {
+		if (myLoc.distanceSquaredTo(destination) > RobotType.TOWER.attackRadiusSquared + 9 || allies.length > 3) {
 			Map.tryMove(destination);
 		}
 		
-		
-		if (Clock.getRoundNum() > rushStart + 200) {
-			checkRushOver();	
-		}
 		Supply.requestSupplyForGroup();
-		
-	}
-
-	private static void checkRushOver() throws GameActionException {
-		int rush = rc.readBroadcast(Comms.rushOver);
-		if (rush == 0) { //in the middle of a rush
-			if (rc.senseNearbyRobots(myRange, myTeam).length < 1) { // no clumping
-				rc.broadcast(Comms.rushOver, 1);
-				rc.broadcast(Comms.rushStartRound, 0);
-				rc.broadcast(Comms.tanksCount, 0);
-				rc.broadcast(Comms.basherCount, 0);
-			}
-		}
 		
 	}
 

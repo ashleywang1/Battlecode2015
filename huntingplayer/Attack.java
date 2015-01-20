@@ -25,15 +25,6 @@ public class Attack {
 	static MapLocation enemyLocation = null;
 	static RobotType enemyType = null;
 
-	public static void enemyZero() throws GameActionException {
-		if (rc.isWeaponReady()) {
-			RobotInfo[] enemies = rc.senseNearbyRobots(myRange, enemyTeam);
-			if (enemies.length > 0) {
-				rc.attackLocation(enemies[0].location);
-			}
-		}
-	}
-
 	public static void hunt() throws GameActionException {
 		if (rc.isCoreReady()) {
 			if (enemyToHunt == -1) {
@@ -74,7 +65,7 @@ public class Attack {
 			}
 			else { //didn't detect any enemies
 				RobotType type = rc.getType();
-				if (type == RobotType.SOLDIER || type == RobotType.TANK) {
+				if (type == RobotType.TANK) {
 					Army.moveArmy();	
 				} else {
 					AirForce.moveAirForce();
@@ -85,7 +76,6 @@ public class Attack {
 	}
 
 	private static void chooseTarget(RobotInfo[] enemies) {
-		
 		
 		for (RobotInfo enemy: enemies) {
 			
@@ -102,6 +92,22 @@ public class Attack {
 				enemyType = enemy.type;
 			}
 		}
+	}
+	
+	public static void launchMissiles() throws GameActionException {
+		MapLocation[] towers = rc.senseEnemyTowerLocations();
+			if(towers.length>0 && Clock.getRoundNum()>1600){
+				
+				if(rc.canLaunch(rc.getLocation().directionTo(towers[0]))){
+					
+				rc.launchMissile(rc.getLocation().directionTo(towers[0]));
+				}
+			}
+			else{
+				if(Clock.getRoundNum()>1600 && rc.canLaunch(rc.getLocation().directionTo(rc.senseEnemyHQLocation()))){
+					rc.launchMissile(rc.getLocation().directionTo(rc.senseEnemyHQLocation()));
+				}
+			}
 	}
 
 	public static MapLocation findEnemyRobotNear(MapLocation location, int id) {
@@ -139,6 +145,15 @@ public class Attack {
 		}
 	}
 
+	public static void enemyZero() throws GameActionException {
+		if (rc.isWeaponReady()) {
+			RobotInfo[] enemies = rc.senseNearbyRobots(myRange, enemyTeam);
+			if (enemies.length > 0) {
+				rc.attackLocation(enemies[0].location);
+			}
+		}
+	}
+
 	public static void attackTower() throws GameActionException {
 		MapLocation nearbyTower = null;
 		RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(rc.getLocation(),
@@ -160,15 +175,5 @@ public class Attack {
 			}
 		}
 	}
-	
-	public static void containHQ() throws GameActionException { //do what the WarMachine did
-		
-		MapLocation myLoc = rc.getLocation();
-		int distToEnemyHQ = myLoc.distanceSquaredTo(enemyHQ);
-		
-		if (distToEnemyHQ > RobotType.HQ.attackRadiusSquared + 1) {
-			//Map.safeMove(enemyHQ);
-			Map.Encircle(enemyHQ);
-		}
-	}
+
 }
