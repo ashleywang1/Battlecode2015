@@ -88,24 +88,12 @@ public class AirForce {
 				//containHQ();
 				protectMiners();
 			} else { //RUSH
-				containHQ();
+				Attack.containHQ();
 			}
 		}
 		
 	}
 	
-	public static void containHQ() throws GameActionException { //do what the WarMachine did
-		
-		MapLocation myLoc = rc.getLocation();
-		MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
-		int distToEnemyHQ = myLoc.distanceSquaredTo(enemyHQ);
-		//Map.safeMove(enemyHQ);
-		//rallyContain(enemyHQ, RobotType.HQ.attackRadiusSquared + 4);
-		
-		if (distToEnemyHQ > RobotType.HQ.attackRadiusSquared + 5) {
-			Map.safeMove(enemyHQ);
-		}
-	}
 
 	public static void protectMiners() throws GameActionException {
 		int oreLoc = rc.readBroadcast(Comms.bestOreFieldLoc);

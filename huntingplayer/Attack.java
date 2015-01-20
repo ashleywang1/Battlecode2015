@@ -6,12 +6,18 @@ import battlecode.common.*;
 
 public class Attack {
 
+	
 	static RobotController rc = RobotPlayer.rc;
 	static Team myTeam = RobotPlayer.myTeam;
+	static MapLocation myHQ = RobotPlayer.myHQ;
+	static MapLocation[] myTowers = RobotPlayer.myTowers;
 	static Team enemyTeam = RobotPlayer.enemyTeam;
-
+	static MapLocation enemyHQ = RobotPlayer.enemyHQ;
+	static MapLocation[] enemyTowers = RobotPlayer.enemyTowers;
+	
 	static int myRange = RobotPlayer.myRange;
-
+	static Direction facing = RobotPlayer.facing;
+	
 	static Random rand = RobotPlayer.rand;
 	static Direction[] directions = RobotPlayer.directions;
 
@@ -152,6 +158,17 @@ public class Attack {
 			} else {
 				lowestHP(nearbyEnemies);
 			}
+		}
+	}
+	
+	public static void containHQ() throws GameActionException { //do what the WarMachine did
+		
+		MapLocation myLoc = rc.getLocation();
+		int distToEnemyHQ = myLoc.distanceSquaredTo(enemyHQ);
+		
+		if (distToEnemyHQ > RobotType.HQ.attackRadiusSquared + 1) {
+			//Map.safeMove(enemyHQ);
+			Map.Encircle(enemyHQ);
 		}
 	}
 }

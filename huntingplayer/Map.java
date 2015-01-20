@@ -3,7 +3,6 @@ package huntingplayer;
 import java.util.ArrayList;
 import java.util.Random;
 
-import com.sun.xml.internal.bind.v2.schemagen.xmlschema.List;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
@@ -30,6 +29,8 @@ public class Map {
 	static Direction[] directions = RobotPlayer.directions;
 	static int mapXsign = RobotPlayer.mapXsign;
 	static int mapYsign = RobotPlayer.mapYsign;
+	static int preference = rand.nextDouble() < .5 ? -1: 1;
+	
 
 	
     // This method will attempt to move in Direction d (or as close to it as possible)
@@ -92,31 +93,31 @@ public class Map {
 	public static void Encircle(MapLocation dest) throws GameActionException {
 		MapLocation myLoc = rc.getLocation();
 		Direction toDest = myLoc.directionTo(dest);
-		Direction safeDir = directions[rand.nextInt(8)];
-		//There is a better way to write this but I am stupid and can't do it
-		if (Map.checkSafety(myLoc, toDest)) {
-			safeDir = toDest;
-		} else if (Map.checkSafety(myLoc, toDest.rotateLeft())) {
-			safeDir = toDest.rotateLeft();
-		} else if (Map.checkSafety(myLoc, toDest.rotateLeft().rotateLeft())) {
-			safeDir = toDest.rotateLeft().rotateLeft();
-		} else if (Map.checkSafety(myLoc, toDest.rotateLeft().rotateLeft().rotateLeft())) {
-			safeDir = toDest.rotateLeft().rotateLeft().rotateLeft();
-		} else if (Map.checkSafety(myLoc, toDest.opposite())) {
-			safeDir = toDest.opposite();
-		}  else if (Map.checkSafety(myLoc, toDest.opposite().rotateLeft())) {
-			safeDir = toDest.opposite().rotateLeft();
-		}
-		else {
-			Direction d = findSafeTile();
-			if (Map.checkSafety(myLoc, d)) { //toDest.rotateLeft().rotateLeft(
-				safeDir = d;
-			}
+		Direction[] clockwise = {toDest, toDest.rotateLeft(), toDest.rotateLeft().rotateLeft(), toDest.opposite().rotateRight(),
+				toDest.opposite(), toDest.opposite().rotateLeft(), toDest.rotateRight().rotateRight(), toDest.rotateRight()};
+		Direction[] counterClockwise = {toDest, toDest.rotateRight(), toDest.rotateRight().rotateRight(), 
+				toDest.opposite().rotateLeft(), toDest.opposite(), toDest.opposite().rotateRight(), toDest.rotateLeft().rotateLeft(), 
+				toDest.rotateLeft()};
+		boolean moved = false;
+		Direction[] rotation;
+		
+		if (preference == 1) {
+			rotation = clockwise;
+		} else {
+			rotation = counterClockwise;
 		}
 		
-		if (rc.canMove(safeDir)) {
-			rc.move(safeDir);
+		for (Direction safeDir: rotation) {
+			if (Map.checkSafety(myLoc, safeDir) && rc.canMove(safeDir)) {
+				rc.move(safeDir);
+				moved = true;
+				break;
+			}
 		}
+		if (!moved) {
+			preference = -1*preference;
+		}
+		
 	}
 	
 	public static void beaverMove() throws GameActionException{

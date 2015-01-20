@@ -105,7 +105,7 @@ public class Army {
 			} else if (earlyDefense != 0 && Clock.getRoundNum() < 500) {
 				AirForce.rallyAround(Map.intToLoc(earlyDefense));
 			} else {
-				AirForce.containHQ();
+				Attack.containHQ();
 			}
 			
 		}

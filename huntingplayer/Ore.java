@@ -33,9 +33,9 @@ public class Ore {
 		boolean success = false;
 		int numMiners = rc.readBroadcast(Comms.minerCount);
 		int round = Clock.getRoundNum();
-		if (rc.isCoreReady() && numMiners < 60 && 
+		if (rc.isCoreReady() && numMiners < 100 && 
 				((rc.getTeamOre() >= RobotType.MINER.oreCost && round < 400) || 
-						(rc.getTeamOre() >= RobotType.MINER.oreCost + 200))) {
+						(rc.getTeamOre() >= RobotType.MINER.oreCost + RobotType.TANK.oreCost))) {
 			int oreFields = rc.readBroadcast(Comms.bestOreFieldLoc);
 			
 			if (oreFields == 0) {
@@ -169,7 +169,7 @@ public class Ore {
 		int maxOre = Math.max(rc.readBroadcast(Comms.bestOreFieldAmount), 20);
 		int oreDistance = rc.readBroadcast(Comms.bestOreFieldDistance);
 		MapLocation myLoc = (rc.getLocation());
-		int myDistance = myLoc.distanceSquaredTo(myHQ);
+		int myDistance = myLoc.distanceSquaredTo(enemyHQ);
 		double ore = surroundingOre(myLoc);
 		int loc = rc.readBroadcast(Comms.bestOreFieldLoc);
 		MapLocation mapCoords = Map.intToLoc(loc);
