@@ -30,10 +30,16 @@ public class AirForce {
 	public static void runHelipad() throws GameActionException {
 		if (rc.isCoreReady()) {
 			int numDrones = rc.readBroadcast(Comms.droneCount);
-			if (rc.getTeamOre() > RobotType.DRONE.oreCost && numDrones < 100) {
+			int numairspace = rc.readBroadcast(Comms.aerospacelabCount);
+			if (rc.getTeamOre() > RobotType.DRONE.oreCost && numDrones < 10) {
 				if (RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.DRONE)) {
 					
 					rc.broadcast(Comms.droneCount, numDrones + 1);
+				}
+			}
+			if (rc.getTeamOre() > RobotType.AEROSPACELAB.oreCost && numairspace<3) {
+				if (RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.AEROSPACELAB)) {
+					rc.broadcast(Comms.aerospacelabCount, numairspace + 1);
 				}
 			}
 		}
@@ -45,8 +51,14 @@ public class AirForce {
 		
 	}
 
-	public static void run16Lab() {
-		// TODO Auto-generated method stub
+	public static void run16Lab() throws GameActionException {
+		int numLaunchers = rc.readBroadcast(Comms.launcherCount);
+		if (rc.getTeamOre() > RobotType.LAUNCHER.oreCost) {
+			if (RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.LAUNCHER)) {
+				
+				rc.broadcast(Comms.launcherCount, numLaunchers + 1);
+			}
+		}
 		
 	}
 
