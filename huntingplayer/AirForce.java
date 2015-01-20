@@ -31,7 +31,7 @@ public class AirForce {
 	public static void runHelipad() throws GameActionException {
 		if (rc.isCoreReady()) {
 			int numDrones = rc.readBroadcast(Comms.droneCount);
-			if (rc.getTeamOre() > RobotType.DRONE.oreCost + RobotType.TANK.oreCost && numDrones < 20) {
+			if (rc.getTeamOre() > RobotType.DRONE.oreCost + RobotType.TANK.oreCost && numDrones < 10) {
 				RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.DRONE);
 			}
 		}
@@ -39,11 +39,12 @@ public class AirForce {
 	}
 	
 	public static void runLauncher() throws GameActionException {
-		if (rc.isCoreReady()) {
+
 			Attack.launchMissiles();
+			if(rc.isCoreReady())
 			droneRush();
 				
-		}
+		
 	}
 	
 	public static void runMissile() throws GameActionException {
@@ -70,7 +71,9 @@ public class AirForce {
 
 	public static void runDrone() throws GameActionException {
 		rc.senseNearbyRobots(myRange*2, myTeam);
-		
+//		if(rc.isCoreReady()){
+//		becomeSupplyDrone();
+//		}
 		if (Map.inSafeArea(rc.getLocation())) {
 			Attack.hunt();	
 		} else {
@@ -152,7 +155,10 @@ public class AirForce {
 		}
 		
 		//rally around the destination then move
-		if (myLoc.distanceSquaredTo(destination) > RobotType.TOWER.attackRadiusSquared + 25 ||
+		if(Clock.getRoundNum()>1800){
+			Map.tryMove(enemyHQ);
+		}
+		else if (myLoc.distanceSquaredTo(destination) > RobotType.TOWER.attackRadiusSquared  ||
 				allies.length > 3) {
 			Map.tryMove(destination);
 		}

@@ -43,6 +43,9 @@ public class Attack {
 					enemyType = null;
 				} else {
 					// if we can attack, do so
+					if(rc.getType()==RobotType.LAUNCHER){
+						launchNearbyMissiles();
+					}
 					if (rc.canAttackLocation(enemyLocation) && rc.isWeaponReady()) {
 						rc.attackLocation(enemyLocation);
 					} else {
@@ -75,6 +78,14 @@ public class Attack {
 		}
 	}
 
+	private static void launchNearbyMissiles() throws GameActionException {
+		RobotInfo[] enemies = rc.senseNearbyRobots(10, enemyTeam);
+		if (enemies.length > 0) {
+			rc.launchMissile(rc.getLocation().directionTo(enemies[0].location));
+		}
+		
+	}
+
 	private static void chooseTarget(RobotInfo[] enemies) {
 		
 		for (RobotInfo enemy: enemies) {
@@ -96,17 +107,25 @@ public class Attack {
 	
 	public static void launchMissiles() throws GameActionException {
 		MapLocation[] towers = rc.senseEnemyTowerLocations();
-			if(towers.length>0 && Clock.getRoundNum()>1600){
+		
+			if(towers.length>0 && Clock.getRoundNum()>1800){
 				
 				if(rc.canLaunch(rc.getLocation().directionTo(towers[0]))){
 					
 				rc.launchMissile(rc.getLocation().directionTo(towers[0]));
 				}
 			}
-			else{
-				if(Clock.getRoundNum()>1600 && rc.canLaunch(rc.getLocation().directionTo(rc.senseEnemyHQLocation()))){
+			else if(Clock.getRoundNum()>1800){
+				if(rc.canLaunch(rc.getLocation().directionTo(rc.senseEnemyHQLocation()))){
 					rc.launchMissile(rc.getLocation().directionTo(rc.senseEnemyHQLocation()));
 				}
+			}else{
+				
+				RobotInfo[] enemies = rc.senseNearbyRobots(10, enemyTeam);
+				if (enemies.length > 0) {
+					rc.launchMissile(rc.getLocation().directionTo(enemies[0].location));
+				}
+				
 			}
 	}
 

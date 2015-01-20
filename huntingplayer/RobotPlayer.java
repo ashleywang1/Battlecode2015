@@ -113,6 +113,8 @@ public class RobotPlayer {
         			AirForce.run16Lab();
         		} else if (rc.getType() == RobotType.LAUNCHER) {
         			AirForce.runLauncher();
+        		} else if(rc.getType() == RobotType.MISSILE){
+        			AirForce.runMissile();
         		}
                 
                 detectEnemies();
@@ -257,17 +259,14 @@ public class RobotPlayer {
 		} else if (TFnum == 0) {
 			becomeHQTankFactory();
 		} else if (TFnum < 3 || myOre > 3000) {
-			becomeTankFactory();
-		} else if (helipadNum < 1 || myOre > 2000) {
+			becomeHQTankFactory();
+		} else if (helipadNum < 1 ) {
 			becomeHelipad();
 		} else if (MFnum < 2) {
 			becomeMiningFactory(MFnum);
 		} else if (supplyNum < 5) {
 			becomeSuppliers();
-		} else {
-			beaverMine();
-		}	
-		
+		} 
 	}
 
 	private static void launcherStrategy() throws GameActionException {
@@ -275,22 +274,29 @@ public class RobotPlayer {
 		int helipadNum = rc.readBroadcast(Comms.helipadCount);
 		int supplyNum = rc.readBroadcast(Comms.supplydepotCount);
 		int aeroNum = rc.readBroadcast(Comms.aerospacelabCount);
-
+		int barracks = rc.readBroadcast(Comms.barracksCount);
+		int TFnum = rc.readBroadcast(Comms.tankfactoryCount);
+		
 		if (MFnum == 0) {
 			becomeHQMiningFactory(MFnum);
 		} else if (helipadNum < 1) {
 			becomeHelipad();
+		} else if(barracks==0){
+			becomeHQBarracks(barracks); //just want bashers
 		} else if (MFnum < 2) {
-			becomeMiningFactory(MFnum);
-		}else if(aeroNum<3)
+			becomeHQMiningFactory(MFnum);
+		
+		} else if (TFnum <3) {
+			becomeHQTankFactory();
+		}	else if(aeroNum<4){
 			becomeAeroLab();
+		}
 		else if(supplyNum<10)
 			becomeSuppliers();
-		else
-			beaverMine();
-			
+	
+}
 		
-	}
+	
 	
 	//All beaver transformation methods
 
@@ -411,7 +417,7 @@ public class RobotPlayer {
 		MapLocation destination = Map.intToLoc(dest);
 		MapLocation myLoc = rc.getLocation();
 		RobotInfo[] neighbors = rc.senseNearbyRobots(myRange);
-		if (rc.hasBuildRequirements(RobotType.AEROSPACELAB) && neighbors.length < 2 && myLoc.distanceSquaredTo(destination) < 10) {
+		if (rc.hasBuildRequirements(RobotType.AEROSPACELAB)) {
 			if (rc.getTeamOre() > RobotType.AEROSPACELAB.oreCost) {
 				boolean success = tryBuild(directions[rand.nextInt(8)], RobotType.AEROSPACELAB);
 				if (success) {
@@ -420,9 +426,9 @@ public class RobotPlayer {
 				}
 			}
 		} else {
-			//Map.beaverMove();
+			Map.beaverMove();
 			//beaverMine();
-			Map.tryMove(destination);
+			//Map.tryMove(destination);
 		}
 		
 	}

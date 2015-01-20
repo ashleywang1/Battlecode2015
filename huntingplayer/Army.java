@@ -66,11 +66,23 @@ public class Army {
 			if (Map.inSafeArea(rc.getLocation())) {
 				Attack.hunt(); //if no enemy in sight, moveArmy
 			} else {
-				Attack.attackTower();
-				moveArmy();
+				if (Clock.getRoundNum() < 1600) {
+					Attack.enemyZero();
+					moveArmy();
+				} else {
+					MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
+						if (enemyTowers.length > 0) {
+							Map.tryMove(enemyTowers[0]); 
+							Attack.attackTower();
+						}else {
+							Attack.enemyZero();
+							Map.tryMove(enemyHQ);
+						}
+		
 			}	
-		}
+			}
 				
+	}
 	}
 	
 	public static void moveArmy() throws GameActionException {
@@ -93,7 +105,7 @@ public class Army {
 		int helpTower = rc.readBroadcast(Comms.towerDistressCall);
 		boolean outnumbered = (rc.senseTowerLocations().length < rc.senseEnemyTowerLocations().length + 1);
 		int earlyDefense = rc.readBroadcast(Comms.defensiveRally);
-		if (outnumbered && Clock.getRoundNum() > 1800) {
+		if ( Clock.getRoundNum() > 1800) {
 			groundRush();
 		} else if (helpTower != 0 && rc.getType() == RobotType.SOLDIER) {
 			defendTower(helpTower);
