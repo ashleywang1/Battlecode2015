@@ -247,7 +247,7 @@ public class Map {
 		}
 	}
 	
-    private static Direction findSafeTile() throws GameActionException {
+    public static Direction findSafeTile() throws GameActionException {
 		MapLocation myLoc = rc.getLocation();
 		for (Direction d: directions) {
 			if (checkSafety(myLoc, d) && !rc.isLocationOccupied(myLoc.add(d))) {

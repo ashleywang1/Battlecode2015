@@ -260,11 +260,13 @@ public class RobotPlayer {
 			becomeHQBarracks(barracks); //just want bashers
 		} else if (TFnum < 3 || myOre > 3000) {
 			becomeHQTankFactory();
-		} else if (MFnum < 2) {
-			becomeMiningFactory(MFnum);
-		}  else if (supplyNum < 5) {
-			becomeSuppliers();
-		} 
+		} else {
+			if (MFnum < 2 && Clock.getRoundNum() < 1000) {
+				becomeMiningFactory(MFnum);
+			}  else if (supplyNum < 5) {
+				becomeSuppliers();
+			} 	
+		}
 		
 	}
 
@@ -305,6 +307,8 @@ public class RobotPlayer {
 			becomeHQMiningFactory(MFnum);
 		} else if (helipadNum < 1) {
 			becomeHelipad();
+		} else if(aeroNum<2){
+			becomeAeroLab();
 		} else if(barracks==0){
 			becomeHQBarracks(barracks); //just want bashers
 		} else if (MFnum < 2) {
@@ -312,10 +316,7 @@ public class RobotPlayer {
 		
 		} else if (TFnum <3) {
 			becomeHQTankFactory();
-		}	else if(aeroNum<4){
-			becomeAeroLab();
-		}
-		else if(supplyNum<10)
+		} else if(supplyNum<10)
 			becomeSuppliers();
 	
 }
@@ -330,21 +331,25 @@ public class RobotPlayer {
 		MapLocation myLoc = rc.getLocation();
 		
 		double block = Ore.surroundingOre(myLoc);
-		if (block >= maxOreFound*9 ) {
+		if (block >= maxOreFound - 10 ) {
 			RobotInfo[] neighbors = rc.senseNearbyRobots(myRange);
 			int nearbyMF = Map.nearbyRobots(neighbors, RobotType.MINERFACTORY);
 			
 			if (rc.getTeamOre() >= 500 && nearbyMF == 0) {
-				boolean success = tryBuild(directions[rand.nextInt(8)],RobotType.MINERFACTORY);
-				if (success) {
-					rc.broadcast(Comms.miningfactoryCount, numMiningFactories + 1);
-				}	
+				tryBuild(directions[rand.nextInt(8)],RobotType.MINERFACTORY);
+
 			} else {
 				beaverMine();		
 			}
 		} else {
 			if (oreFieldLoc != 0) {
-				Map.tryMove(Map.intToLoc(oreFieldLoc));
+				MapLocation oreLocation = Map.intToLoc(oreFieldLoc);
+				if (myLoc.distanceSquaredTo(oreLocation) > 30) {
+					Map.tryMove(oreLocation);	
+				} else {
+					Map.randomMove();
+				}
+				
 			} else {
 				Direction awayFromHQ = myHQ.directionTo(rc.getLocation());
 				Map.wanderToward(awayFromHQ, .7);
@@ -385,7 +390,11 @@ public class RobotPlayer {
 				rc.broadcast(Comms.tankfactoryCount, TFnum + 1);
 			}
 		} else {
-			Map.wanderTo(myHQ, .5);
+			if (myLoc.distanceSquaredTo(myHQ) > 15) {
+				Map.wanderTo(myHQ, .9);	
+			} else {
+				beaverMine();
+			}
 		}
 	}
 	

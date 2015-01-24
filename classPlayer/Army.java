@@ -50,7 +50,6 @@ public class Army {
 			} else {
 				Map.randomMove();
 			}
-			//Map.Encircle(myHQ, RobotType.HQ.attackRadiusSquared + 10); //with a wider radius TODO	
 		}
 	}
 
@@ -74,20 +73,8 @@ public class Army {
 			if (Map.inSafeArea(rc.getLocation())) {
 				Attack.hunt(); //if no enemy in sight, moveArmy
 			} else {
-				if (Clock.getRoundNum() < 1600) {
-					Attack.enemyZero();
-					moveArmy();
-				} else {
-					MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
-						if (enemyTowers.length > 0) {
-							Map.tryMove(enemyTowers[0]); 
-							Attack.attackTower();
-						}else {
-							Attack.enemyZero();
-							if (rc.isCoreReady())
-							Map.tryMove(enemyHQ);
-						}
-				}	
+				Attack.attackTower();
+				moveArmy();
 				
 			}
 				
@@ -98,7 +85,7 @@ public class Army {
 		
 		if (rc.isCoreReady()) {
 			int status = rc.readBroadcast(Comms.memory(rc.getID()));
-			if (status == 1) { //defend the HQ
+			if (status == 1 && !rush) { //defend the HQ
 				tankDefender();
 			} else {
 				tankAttacker();
@@ -114,16 +101,15 @@ public class Army {
 		int earlyDefense = rc.readBroadcast(Comms.defensiveRally);
 		int tanks = rc.readBroadcast(Comms.tanksCount);
 		
-		Attack.attackTower();
+		
 		checkRushConditions(tanks);
 		
 		if ( Clock.getRoundNum() > 1800 && outnumbered || rush) {
-			System.out.println("ground rushing");
 			groundRush();
 		} else if (earlyDefense != 0) {
 			MapLocation firstContact = Map.intToLoc(earlyDefense);
 			if (Map.inSafeArea(firstContact)) {
-				AirForce.rallyAround(firstContact);	
+				rallyAt(firstContact);	
 			} else {
 				containHQ();
 			}
@@ -133,12 +119,20 @@ public class Army {
 		
 	}
 
+	private static void rallyAt(MapLocation rallyPoint) throws GameActionException {
+		
+		Direction toRallyPoint = rc.getLocation().directionTo(rallyPoint);
+		
+		Map.tryMove(toRallyPoint);
+		
+	}
+
 	private static void checkRushConditions(int tanks) throws GameActionException {
 		if (tanks > 35) {
 			rush = true;
 		}
 		
-		if (tanks < 20) {
+		if (tanks < 5) {
 			rush = false;
 		}
 		
@@ -192,11 +186,11 @@ public class Army {
 		}
 		
 		//rally around the destination then move
-		if (myLoc.distanceSquaredTo(destination) > RobotType.TOWER.attackRadiusSquared + 9 || allies.length > 3) {
+		int myDist = myLoc.distanceSquaredTo(destination);
+		if ((myDist > RobotType.TOWER.attackRadiusSquared || allies.length > 3) && myDist > rc.getType().attackRadiusSquared) {
 			Map.tryMove(destination);
 		}
 		
-		System.out.println("ground rush toward" + destination);
 		Supply.requestSupplyForGroup();
 		
 	}
