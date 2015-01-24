@@ -116,7 +116,7 @@ public class RobotPlayer {
         		} else if(rc.getType() == RobotType.MISSILE){
         			AirForce.runMissile();
         		}
-                
+       
                 detectEnemies();
         		transferSupplies();
         		Ore.goProspecting();
@@ -236,12 +236,13 @@ public class RobotPlayer {
 		if(rc.isCoreReady()&&Clock.getRoundNum()>1800){
 			trySpawn(directions[rand.nextInt(8)], RobotType.HANDWASHSTATION);
 		}
-		Attack.enemyZero();
+		
 		if (rc.isCoreReady()) {
 			//tankStrategy();
 			launcherStrategy();
 			
 		}
+		Attack.enemyZero();
 	}
 	
 	private static void tankStrategy() throws GameActionException {
@@ -258,7 +259,7 @@ public class RobotPlayer {
 			becomeHQBarracks(barracks); //just want bashers
 		} else if (TFnum == 0) {
 			becomeHQTankFactory();
-		} else if (TFnum < 3 || myOre > 3000) {
+		} else if (TFnum < 6 || myOre > 3000) {
 			becomeHQTankFactory();
 		} else if (helipadNum < 1 ) {
 			becomeHelipad();
@@ -281,17 +282,14 @@ public class RobotPlayer {
 			becomeHQMiningFactory(MFnum);
 		} else if (helipadNum < 1) {
 			becomeHelipad();
-		} else if(barracks==0){
-			becomeHQBarracks(barracks); //just want bashers
-		} else if (MFnum < 2) {
-			becomeHQMiningFactory(MFnum);
-		
-		} else if (TFnum <3) {
-			becomeHQTankFactory();
-		}	else if(aeroNum<4){
+		}	else if(aeroNum<=3 ){
 			becomeAeroLab();
 		}
-		else if(supplyNum<10)
+		else if(aeroNum>3 && supplyNum<2){
+			becomeSuppliers();
+		}else if(aeroNum<6){
+			becomeAeroLab();
+		}else if (supplyNum<10)
 			becomeSuppliers();
 	
 }
@@ -395,8 +393,8 @@ public class RobotPlayer {
                 rc.broadcast(Comms.supplydepotCount, numSupplyDepots + 1);
             }
         }else {
-			//Map.beaverMove();
-        	beaverMine();
+			Map.beaverMove();
+        	//beaverMine();
 		}
         
 	}
@@ -501,8 +499,12 @@ public class RobotPlayer {
                 suppliesToThisLocation = ri.location;
             }
         }
+        try{
         if(suppliesToThisLocation!=null && transferAmount > 0){
             rc.transferSupplies((int)transferAmount, suppliesToThisLocation);
+        }
+        }catch(Exception e){
+        	e.printStackTrace();
         }
     }
 	

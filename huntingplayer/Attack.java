@@ -46,7 +46,7 @@ public class Attack {
 					if(rc.getType()==RobotType.LAUNCHER){
 						launchNearbyMissiles();
 					}
-					if (rc.canAttackLocation(enemyLocation) && rc.isWeaponReady()) {
+					else if (rc.canAttackLocation(enemyLocation) && rc.isWeaponReady()) {
 						rc.attackLocation(enemyLocation);
 					} else {
 						// if we have a larger range than the enemy, try to stay out of their range
@@ -70,7 +70,7 @@ public class Attack {
 				RobotType type = rc.getType();
 				if (type == RobotType.TANK) {
 					Army.moveArmy();	
-				} else {
+				} else if(type !=RobotType.LAUNCHER){
 					AirForce.moveAirForce();
 				}
 				
@@ -78,10 +78,25 @@ public class Attack {
 		}
 	}
 
-	private static void launchNearbyMissiles() throws GameActionException {
-		RobotInfo[] enemies = rc.senseNearbyRobots(10, enemyTeam);
-		if (enemies.length > 0) {
+	public static void launchNearbyMissiles() throws GameActionException {
+		RobotInfo[] enemies = rc.senseNearbyRobots(30, enemyTeam);
+		RobotInfo[] myRobots = rc.senseNearbyRobots(25, myTeam);
+		MapLocation[] towers = rc.senseEnemyTowerLocations();
+		boolean missileExist = false;
+		for(RobotInfo b: myRobots){
+			if(b.type == RobotType.MISSILE)
+				missileExist = true;
+		}
+		if (missileExist == false && enemies.length > 0  && rc.canLaunch(rc.getLocation().directionTo(enemies[0].location))) {
 			rc.launchMissile(rc.getLocation().directionTo(enemies[0].location));
+		}
+		
+		if(missileExist ==false && towers.length>0 && rc.getLocation().distanceSquaredTo(towers[0]) <=25){
+			
+			if(rc.canLaunch(rc.getLocation().directionTo(towers[0]))){
+				
+			rc.launchMissile(rc.getLocation().directionTo(towers[0]));
+			}
 		}
 		
 	}
@@ -122,7 +137,7 @@ public class Attack {
 			}else{
 				
 				RobotInfo[] enemies = rc.senseNearbyRobots(10, enemyTeam);
-				if (enemies.length > 0) {
+				if (enemies.length > 0 && rc.canLaunch(rc.getLocation().directionTo(enemies[0].location))) {
 					rc.launchMissile(rc.getLocation().directionTo(enemies[0].location));
 				}
 				

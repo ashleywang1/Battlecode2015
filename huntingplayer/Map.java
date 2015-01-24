@@ -126,15 +126,23 @@ public class Map {
 	
 	public static boolean checkSafety(MapLocation myLoc, Direction dir) {
 		MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
+		RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(25, enemyTeam);
+		
 		boolean tileInFrontSafe = true;
 		MapLocation tileInFront = myLoc.add(dir);
 		for(MapLocation m: enemyTowers){
-			if(m.distanceSquaredTo(tileInFront)<=RobotType.TOWER.attackRadiusSquared + 4){
+			if(m.distanceSquaredTo(tileInFront)<=RobotType.TOWER.attackRadiusSquared-5){
 				tileInFrontSafe = false;
 				break;
 			}
 		}
-		if (enemyHQ.distanceSquaredTo(tileInFront) < RobotType.HQ.attackRadiusSquared + 4) {
+		for(RobotInfo b: nearbyEnemies){
+			if(rc.getLocation().distanceSquaredTo(b.location)<=b.type.attackRadiusSquared){
+				tileInFrontSafe=false;
+				break;
+			}
+		}
+		if (enemyHQ.distanceSquaredTo(tileInFront) < RobotType.HQ.attackRadiusSquared-5) {
 			tileInFrontSafe = false;
 		}
 		return tileInFrontSafe;
@@ -172,7 +180,8 @@ public class Map {
 		}
 		//Now actually move
 		//avoid going too far from HQ
-		if(rc.senseNearbyRobots(myHQ, 2*RobotType.BEAVER.sensorRadiusSquared, myTeam).length >0){
+
+		if(rc.getLocation().distanceSquaredTo(myHQ)<2*RobotType.BEAVER.sensorRadiusSquared){
 			if (rc.isCoreReady() && rc.canMove(facing)) {
 				rc.move(facing);
 			}

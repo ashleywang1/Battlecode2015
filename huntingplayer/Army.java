@@ -156,7 +156,7 @@ public class Army {
 		
 	}
 
-	private static void groundRush() throws GameActionException {
+	public static void groundRush() throws GameActionException {
 
 		MapLocation myLoc = rc.getLocation();
 		MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
@@ -167,11 +167,11 @@ public class Army {
 		if (enemyTowers.length > 0) {
 			//destination = enemyTowers[0];
 			destination = Map.nearestTower(enemyTowers);
-			//attack the closest one if they're all together TODO Kelly?
+			//attack the closest one if they're all together (done in attackTowers)
 		}
 		
 		//rally around the destination then move
-		if (myLoc.distanceSquaredTo(destination) > RobotType.TOWER.attackRadiusSquared + 9 || allies.length > 3) {
+		if (myLoc.distanceSquaredTo(destination) > RobotType.TOWER.attackRadiusSquared + 15 || allies.length > 3) {
 			Map.tryMove(destination);
 		}
 		

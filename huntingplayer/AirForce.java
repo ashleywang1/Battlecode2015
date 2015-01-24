@@ -39,19 +39,47 @@ public class AirForce {
 	}
 	
 	public static void runLauncher() throws GameActionException {
-
-			Attack.launchMissiles();
-			if(rc.isCoreReady())
-			droneRush();
+			int currentRound = Clock.getRoundNum();
+			double n = rand.nextDouble();
+			if ( n < .5) {
+				if (n < .25) {
+					facing = facing.rotateLeft();
+				} else {
+					facing = facing.rotateRight();
+				}
+			}
+			MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
+			Attack.launchNearbyMissiles();
+			
+				if(rc.isCoreReady() && enemyTowers.length>0)
+					Map.safeMove(enemyTowers[0]);
+				else if (rc.isCoreReady())
+					Map.safeMove(enemyHQ);
+			
+//			if(currentRound>1600){
+//				if(rc.isCoreReady())
+//					Army.groundRush();
+//				Attack.launchMissiles();
+//			}else{
+//				if(rc.isCoreReady()){
+//					Army.moveArmy();
+//				Attack.launchNearbyMissiles();
+//				}
+//			}
 				
 		
 	}
 	
 	public static void runMissile() throws GameActionException {
+		RobotInfo[] enemies = rc.senseNearbyRobots(25, enemyTeam);
 		if(rc.isCoreReady()){
 			System.out.println("Missile headed toward tower from " + rc.getLocation());
-			rc.move(rc.getLocation().directionTo(rc.senseEnemyTowerLocations()[0]));
+			if (enemies.length > 0 && rc.canMove(rc.getLocation().directionTo(enemies[0].location))) {
+				rc.move(rc.getLocation().directionTo(enemies[0].location));
+			}
 		}
+
+
 		
 	}
 
