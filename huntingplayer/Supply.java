@@ -45,6 +45,9 @@ public class Supply {
         } else if (type == RobotType.HELIPAD) {
             supplyChannel = Comms.lowestHelipadSupply;
             supplyLocChannel = Comms.lowestHelipadSupplyLoc;
+        } else if (type == RobotType.AEROSPACELAB) {
+            supplyChannel = Comms.lowestAerospaceLabSupply;
+            supplyLocChannel = Comms.lowestAerospaceLabSupplyLoc;
         } else {
             supplyChannel = Comms.lowestTankFactorySupply;
             supplyLocChannel = Comms.lowestTankFactorySupplyLoc;
@@ -69,6 +72,9 @@ public class Supply {
 	    } else if (type == RobotType.MINER) {
 	        supplyChannel = Comms.lowestMinerSupply;
 	        supplyLocChannel = Comms.lowestMinerSupplyLoc;
+	    } else if (type == RobotType.LAUNCHER) {
+	        supplyChannel = Comms.lowestLauncherSupply;
+	        supplyLocChannel = Comms.lowestLauncherSupplyLoc;
 	    } else {
 	        supplyChannel = Comms.lowestTankSupply;
 	        supplyLocChannel = Comms.lowestTankSupplyLoc;

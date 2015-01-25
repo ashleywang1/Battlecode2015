@@ -70,6 +70,8 @@ public class RobotPlayer {
             rc.broadcast(Comms.lowestTankSupply, 10000);
             rc.broadcast(Comms.lowestHelipadSupply, 10000);
             rc.broadcast(Comms.lowestTankFactorySupply, 10000);
+            rc.broadcast(Comms.lowestLauncherSupply, 10000);
+            rc.broadcast(Comms.lowestAerospaceLabSupply, 10000);
         }
 
         while(true) {
@@ -301,7 +303,7 @@ public class RobotPlayer {
             becomeSuppliers();
         }else if(aeroNum<6){
             becomeAeroLab();
-        }else if (supplyNum<10)
+        }else if (supplyNum<20)
             becomeSuppliers();
 
     }

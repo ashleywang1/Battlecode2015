@@ -60,7 +60,10 @@ public class Comms {
 	public static final int lowestHelipadSupplyLoc = 31;
 	public static final int lowestTankFactorySupply = 32;
 	public static final int lowestTankFactorySupplyLoc = 33;
-	
+	public static final int lowestLauncherSupply = 34;
+	public static final int lowestLauncherSupplyLoc = 35;
+	public static final int lowestAerospaceLabSupply = 36;
+	public static final int lowestAerospaceLabSupplyLoc = 37;
 	
 	//strategy
 	public static final int strategy = 200; //channel to broadcast which strategy for attacking towers
