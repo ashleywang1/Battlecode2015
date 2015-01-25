@@ -63,6 +63,8 @@ public class RobotPlayer {
 		    rc.broadcast(Comms.lowestBasherSupply, 10000);
 		    rc.broadcast(Comms.lowestMinerSupply, 10000);
 		    rc.broadcast(Comms.lowestTankSupply, 10000);
+		    rc.broadcast(Comms.lowestHelipadSupply, 10000);
+		    rc.broadcast(Comms.lowestTankFactorySupply, 10000);
 		}
 				
 		while(true) {
@@ -658,14 +660,14 @@ public class RobotPlayer {
 	
 	private static void transferSupplies() throws GameActionException {
 	    boolean isHQOrSupplyDepot = rc.getType() == RobotType.HQ || rc.getType() == RobotType.SUPPLYDEPOT;
-	    boolean isBeaver = rc.getType() == RobotType.BEAVER;
+	    boolean isDrone = rc.getType() == RobotType.DRONE;
         RobotInfo[] nearbyAllies = rc.senseNearbyRobots(rc.getLocation(),GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED,rc.getTeam());
         double lowestSupply = rc.getSupplyLevel();
         double transferAmount = rc.getSupplyLevel();
         MapLocation suppliesToThisLocation = null;
         for(RobotInfo ri:nearbyAllies){
             if (ri.type == RobotType.TOWER || ri.type == RobotType.HQ || 
-            		(!isHQOrSupplyDepot && ri.type == RobotType.BEAVER)) //|| (isBeaver && ri.supplyLevel > 10)
+            		(!isHQOrSupplyDepot && ri.type == RobotType.DRONE) || (isBuilding(ri.type) && ri.supplyLevel > 300)) //|| (isBeaver && ri.supplyLevel > 10)
                 continue;
             if(ri.supplyLevel<lowestSupply){
                 lowestSupply = ri.supplyLevel;
@@ -683,6 +685,10 @@ public class RobotPlayer {
         }
     }
 	
+	private static boolean isBuilding(RobotType type) {
+        return type == RobotType.BARRACKS || type == RobotType.MINERFACTORY || type == RobotType.HELIPAD;
+    }
+    
 	private static void detectEnemies() throws GameActionException {
 		RobotType type = rc.getType();
 		RobotInfo[] enemies = rc.senseNearbyRobots(myRange, enemyTeam);
