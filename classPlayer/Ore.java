@@ -1,4 +1,4 @@
-package huntingplayer;
+package classPlayer;
 
 import java.util.Random;
 
@@ -60,15 +60,19 @@ public class Ore {
 
 	public static void runMiner() throws GameActionException {
 		
-		RobotInfo[] allies = rc.senseNearbyRobots(myRange-2, myTeam);
-		//avoid enemies, tolerate allies to 3
-		//walls = rc.senseTerrainTile(rc.getLocation());
-		
 		if (rc.isCoreReady()) {
+			RobotInfo[] enemies = rc.senseNearbyRobots(myRange*3, enemyTeam);
+			RobotInfo[] allies = rc.senseNearbyRobots(myRange-2, myTeam);
+			
 			MapLocation myLoc = rc.getLocation();
 			MapLocation miner = nearestMiner(allies);
-			if (rc.senseOre(myLoc) > 3) {
+			if (enemies.length > 0) {
+				Map.tryMoveAwayFrom(enemies[0].location);
+			} else if (rc.senseOre(myLoc) > 2) {
 				if (miner != null && rand.nextDouble() < .3) {
+					if (!Map.checkSafety(myLoc, facing)) {
+						facing = Map.findSafeTile();
+					}
 					Map.tryMove(facing);
 				} else {
 					rc.mine();	
@@ -86,32 +90,50 @@ public class Ore {
 	public static void minerMove(MapLocation myLoc) throws GameActionException {
 		
 		int oreLoc = rc.readBroadcast(Comms.bestOreFieldLoc);
-		//double front = rc.senseOre(myLoc.add(facing));
-		//double right = rc.senseOre(myLoc.add(facing.rotateRight()));
-		//double left = rc.senseOre(myLoc.add(facing.rotateLeft()));
 		
-		if (oreLoc != 0 && rand.nextDouble() < .9) {
+		if (oreLoc != 0) {
 			MapLocation oreField = Map.intToLoc(oreLoc);
-			
 			Direction toOre = myLoc.directionTo(oreField);
 			
 			if (Map.checkSafety(myLoc, toOre)) {
-				Map.tryMove(toOre);
-			} else {
-				if (rand.nextDouble() < .5) {
-					if (Map.checkSafety(myLoc, toOre.opposite().rotateLeft())) {
-						Map.tryMove(toOre.opposite().rotateLeft());
-					}
-				} else {
-					if (Map.checkSafety(myLoc, toOre.opposite().rotateRight())) {
-						Map.tryMove(toOre.opposite().rotateRight());
-					}
+				if (Map.checkSafety(myLoc, toOre)) {
+					Map.tryMove(toOre);
 				}
-				
+			} else {
+				localOre(myLoc);
+			}
+		} else {
+			localOre(myLoc);
+		}
+		
+	}
+
+
+	private static void localOre(MapLocation myLoc) throws GameActionException {
+		Direction back = myLoc.directionTo(myHQ);
+		
+		double maxOre = rc.senseOre(myLoc.add(facing));
+		
+		for (Direction dir: directions) {
+			double dirOre = rc.senseOre(myLoc.add(dir));
+			if (dirOre > maxOre) {
+				maxOre = dirOre;
+				facing = dir;
 			}
 		}
-		else {
-			Map.randomMove();
+		
+		if (Map.checkSafety(myLoc, facing)) {
+			Map.tryMove(facing);
+		} else {
+			if (rand.nextDouble() < .5) {
+				if (Map.checkSafety(myLoc, facing.opposite().rotateLeft())) {
+					Map.tryMove(facing.opposite().rotateLeft());
+				}
+			} else {
+				if (Map.checkSafety(myLoc, facing.opposite().rotateRight())) {
+					Map.tryMove(facing.opposite().rotateRight());
+				}
+			}	
 		}
 		
 	}
@@ -138,24 +160,24 @@ public class Ore {
 
 	public static void goProspecting() throws GameActionException {
 
-		//int oreThreshold = Clock.getRoundNum() < 1400? 20 : 10;
-		int maxOre = Math.max(rc.readBroadcast(Comms.bestOreFieldAmount), 20);
+		int maxOre = Math.max(rc.readBroadcast(Comms.bestOreFieldAmount), 100);
 		int oreDistance = rc.readBroadcast(Comms.bestOreFieldDistance);
-		MapLocation myLoc = (rc.getLocation());
+		int loc = rc.readBroadcast(Comms.bestOreFieldLoc);
+		
+		MapLocation myLoc = rc.getLocation();
 		int myDistance = myLoc.distanceSquaredTo(enemyHQ);
 		double ore = surroundingOre(myLoc);
-		int loc = rc.readBroadcast(Comms.bestOreFieldLoc);
 		MapLocation mapCoords = Map.intToLoc(loc);
 		RobotInfo[] enemies = rc.senseNearbyRobots(myRange*2, enemyTeam);
 		int harmless = Map.nearbyRobots(enemies, RobotType.MINER);
 		
-		if (ore > maxOre*9 && myDistance > oreDistance) {
-			
+		boolean safe = Map.checkSafety(mapCoords.add(facing.opposite()), facing);
+		
+		if ((int) ore >= maxOre && myDistance > oreDistance) {
 			int coords = Map.locToInt(rc.getLocation());
-			//System.out.println("HEY FOUND BETTER" + coords); //TODO
 			rc.broadcast(Comms.bestOreFieldLoc, coords);
-			rc.broadcast(Comms.bestOreFieldAmount, (int) (ore/9.0) );
-		} else if (myLoc.equals(mapCoords) && (rc.senseOre(myLoc) < maxOre*9 || enemies.length - harmless > 0)) {
+			rc.broadcast(Comms.bestOreFieldAmount, (int) ore );
+		} else if (myLoc.equals(mapCoords) && (!safe || ore < 10 || enemies.length - harmless > 0)) {
 			rc.broadcast(Comms.bestOreFieldAmount, 0);
 			rc.broadcast(Comms.bestOreFieldLoc, 0);
 			//System.out.println("find another minefield");

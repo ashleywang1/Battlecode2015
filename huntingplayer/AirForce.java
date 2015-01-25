@@ -10,7 +10,6 @@ import battlecode.common.RobotController;
 import battlecode.common.RobotInfo;
 import battlecode.common.RobotType;
 import battlecode.common.Team;
-import battlecode.common.TerrainTile;
 
 public class AirForce {
 
@@ -36,19 +35,80 @@ public class AirForce {
 				if (RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.DRONE)) {
 				    
 					rc.broadcast(Comms.droneCount, numDrones + 1);
-				}
+			if (rc.getTeamOre() > RobotType.DRONE.oreCost + RobotType.TANK.oreCost && numDrones < 10) {
+				RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.DRONE);
 			}
 		}
 		
 	}
 	
-	public static void runLauncher() {
-		// TODO Auto-generated method stub
+	public static void runLauncher() throws GameActionException {
+			int currentRound = Clock.getRoundNum();
+			double n = rand.nextDouble();
+
+			MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
+			MapLocation[] myTowers = rc.senseTowerLocations();
+			RobotInfo [] nearbyFriends = rc.senseNearbyRobots(25, myTeam);
+			int numLaunch = Map.nearbyRobots(nearbyFriends, RobotType.LAUNCHER);
+			
+			Attack.launchNearbyMissiles();
+			if(numLaunch<5){
+				if(myTowers.length>0){
+					MapLocation nearestMyTower = Map.nearestTower(myTowers);
+					if(rc.isCoreReady())
+						Map.safeMove(nearestMyTower);
+				}
+			}else{
+				if(rc.isCoreReady() && enemyTowers.length>0)
+					Map.safeMove(enemyTowers[0]);
+				else if (rc.isCoreReady())
+					Map.safeMove(enemyHQ);
+			}
+
+			
+
+			
+//			if(currentRound>1600){
+//				if(rc.isCoreReady())
+//					Army.groundRush();
+//				Attack.launchMissiles();
+//			}else{
+//				if(rc.isCoreReady()){
+//					Army.moveArmy();
+//				Attack.launchNearbyMissiles();
+//				}
+//			}
+				
+		
+	}
+	
+	public static void runMissile() throws GameActionException {
+		RobotInfo[] enemies = rc.senseNearbyRobots(25, enemyTeam);
+		if(rc.isCoreReady()){
+
+			if (enemies.length > 0 && rc.canMove(rc.getLocation().directionTo(enemies[0].location))) {
+				
+				//System.out.println("Missile headed toward tower from " + rc.getLocation());
+				rc.setIndicatorString(0,"trying to move "+Clock.getRoundNum() +  rc.canMove(rc.getLocation().directionTo(enemies[0].location)));
+				rc.move(rc.getLocation().directionTo(enemies[0].location));
+			}
+		}
+
+
 		
 	}
 
-	public static void run16Lab() {
-		// TODO Auto-generated method stub
+	public static void run16Lab() throws GameActionException {
+		
+		if(rc.isCoreReady()){
+			int numLaunchers = rc.readBroadcast(Comms.launcherCount);
+			if (rc.getTeamOre() > RobotType.LAUNCHER.oreCost) {
+			if (RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.LAUNCHER)) {
+				
+				rc.broadcast(Comms.launcherCount, numLaunchers + 1);
+			}
+		}
+		}
 		
 	}
 
@@ -78,17 +138,14 @@ public class AirForce {
 
 	public static void moveAirForce() throws GameActionException {
 		
-		int strategy = rc.readBroadcast(200);
-		MapLocation myLoc = rc.getLocation();
-		int rushOver = rc.readBroadcast(Comms.rushOver);
-		//System.out.println("soldiers get that strategy is : " + strategy + " and rushOver is : " + rushOver);
-		
 		if (rc.isCoreReady()) {
 			
 			int helpTower = rc.readBroadcast(Comms.towerDistressCall);
 			boolean outnumbered = (rc.senseTowerLocations().length < rc.senseEnemyTowerLocations().length + 1);
 			int numDrones = rc.readBroadcast(Comms.droneCount);
 			//
+			//int droneTarget = rc.readBroadcast(Comms.droneTarget);
+			int droneDefense = rc.readBroadcast(Comms.droneRallyPoint);
 			
 			if (outnumbered && Clock.getRoundNum() > 1800) {
 				droneRush();
@@ -97,8 +154,15 @@ public class AirForce {
 			} else if (numDrones < 100 && strategy != 1) { 
 				//rallyAround(myHQ);
 				containHQ();
-			} else { //RUSH
-				containHQ();
+			} else if (droneDefense != 0 && numDrones < 20) {
+				int radius = RobotType.HQ.attackRadiusSquared + 25;
+				if (rc.getLocation().distanceSquaredTo(myHQ) < radius) {
+					Map.randomMove();
+				} else {
+					Map.Encircle(myHQ, radius);	
+				}
+			} else {
+				protectMiners();
 			}
 		}
 		
@@ -133,21 +197,29 @@ public class AirForce {
 	public static void protectMiners() throws GameActionException {
 		int oreLoc = rc.readBroadcast(Comms.bestOreFieldLoc);
 		int minerEnemies = rc.readBroadcast(Comms.enemiesNearMiners);
-		int numDrones = rc.readBroadcast(Comms.droneCount);
 		
-		if (oreLoc != 0 && minerEnemies == 0) {
-			//rallyAround(Map.intToLoc(oreLoc));
-			rallyContain(Map.intToLoc(oreLoc), numDrones);
-		} else if (minerEnemies != 0) {
-			rallyAround(Map.intToLoc(minerEnemies));
+		//supply them too
+		if (rc.getSupplyLevel() < 200) {
+			Map.safeMove(myHQ);
 		} else {
-			Map.randomMove();
+			if (oreLoc != 0 && minerEnemies == 0) {
+				int radius = 25;
+				MapLocation dest = Map.intToLoc(oreLoc);
+				if (rc.getLocation().distanceSquaredTo(dest) < radius) {
+					Map.randomMove();
+				} else {
+					Map.safeMove(dest);
+				}
+			} else if (minerEnemies != 0) {
+				rallyAround(Map.intToLoc(minerEnemies));
+			} else {
+				Map.randomMove();
+			}	
 		}
+		
 	}
 
 	public static void defendTower(int help) throws GameActionException {
-		MapLocation myLoc = rc.getLocation();
-		RobotInfo[] allies = rc.senseNearbyRobots(myRange,myTeam);
 		MapLocation toHelp = Map.intToLoc(help);
 		Map.tryMove(toHelp);
 	}
@@ -157,9 +229,6 @@ public class AirForce {
 		MapLocation myLoc = rc.getLocation();
 		MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
 		RobotInfo[] allies = rc.senseNearbyRobots(myRange,myTeam);
-		int rushStart = rc.readBroadcast(Comms.rushStartRound);
-		int rushOver = rc.readBroadcast(Comms.rushOver);
-		int strategy = rc.readBroadcast(Comms.strategy);
 		
 		MapLocation destination = enemyHQ;
 		if (enemyTowers.length > 0) {
@@ -168,7 +237,10 @@ public class AirForce {
 		}
 		
 		//rally around the destination then move
-		if (myLoc.distanceSquaredTo(destination) > RobotType.TOWER.attackRadiusSquared + 25 ||
+		if(Clock.getRoundNum()>1800){
+			Map.tryMove(enemyHQ);
+		}
+		else if (myLoc.distanceSquaredTo(destination) > RobotType.TOWER.attackRadiusSquared  ||
 				allies.length > 3) {
 			Map.tryMove(destination);
 		}
@@ -179,12 +251,13 @@ public class AirForce {
 	}
 
 	private static void rallyContain(MapLocation rallyPoint, int radius) throws GameActionException {
-		MapLocation myLoc = rc.getLocation();
 		if (myLoc.distanceSquaredTo(rallyPoint) > radius) {
 			rallyAround(rallyPoint);
 		} else {
 			Map.randomMove();
 		}
+		
+		//TODO
 	}
 	
 	
@@ -192,8 +265,7 @@ public class AirForce {
 		int offsetIndex = 0;
 		int[] offsets = {0,1,-1,2,-2};
 		Direction toRallyPoint = rc.getLocation().directionTo(rallyPoint);
-		int dirint = Map.directionToInt(toRallyPoint);  //TODO why is the package wrong?
-		boolean blocked = false;
+		int dirint = Map.directionToInt(toRallyPoint);
 		while (offsetIndex < 5 && !rc.canMove(directions[(dirint+offsets[offsetIndex]+8)%8])) {
 			offsetIndex++;
 		}

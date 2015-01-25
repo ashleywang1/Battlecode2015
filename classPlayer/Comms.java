@@ -1,4 +1,4 @@
-package ashleyplayer;
+package classPlayer;
 
 public class Comms {
 	

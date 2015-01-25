@@ -1,4 +1,4 @@
-package huntingplayer;
+package ashleyplayer;
 
 import java.util.Random;
 
@@ -43,10 +43,7 @@ public class Attack {
 					enemyType = null;
 				} else {
 					// if we can attack, do so
-					if(rc.getType()==RobotType.LAUNCHER){
-						launchNearbyMissiles();
-					}
-					else if (rc.canAttackLocation(enemyLocation) && rc.isWeaponReady()) {
+					if (rc.canAttackLocation(enemyLocation) && rc.isWeaponReady()) {
 						rc.attackLocation(enemyLocation);
 					} else {
 						// if we have a larger range than the enemy, try to stay out of their range
@@ -70,38 +67,12 @@ public class Attack {
 				RobotType type = rc.getType();
 				if (type == RobotType.TANK) {
 					Army.moveArmy();	
-				} else if(type !=RobotType.LAUNCHER){
+				} else {
 					AirForce.moveAirForce();
 				}
 				
 			}
 		}
-	}
-
-	public static void launchNearbyMissiles() throws GameActionException {
-		RobotInfo[] enemies = rc.senseNearbyRobots(30, enemyTeam);
-		RobotInfo[] myRobots = rc.senseNearbyRobots(25, myTeam);
-		MapLocation[] towers = rc.senseEnemyTowerLocations();
-		
-		boolean missileExist = false;
-		for(RobotInfo b: myRobots){
-			if(b.type == RobotType.MISSILE)
-				missileExist = true;
-		}
-		if (enemies.length > 0  && rc.canLaunch(rc.getLocation().directionTo(enemies[0].location))) {
-			rc.launchMissile(rc.getLocation().directionTo(enemies[0].location));
-		}
-		
-		if(towers.length>0 ){
-			MapLocation nearestTower = Map.nearestTower(towers);
-			if(rc.getLocation().distanceSquaredTo(nearestTower) <=25){
-				if(rc.canLaunch(rc.getLocation().directionTo(nearestTower))){
-				
-					rc.launchMissile(rc.getLocation().directionTo(nearestTower));
-			}
-			}
-		}
-		
 	}
 
 	private static void chooseTarget(RobotInfo[] enemies) {
@@ -121,30 +92,6 @@ public class Attack {
 				enemyType = enemy.type;
 			}
 		}
-	}
-	
-	public static void launchMissiles() throws GameActionException {
-		MapLocation[] towers = rc.senseEnemyTowerLocations();
-		
-			if(towers.length>0 && Clock.getRoundNum()>1800){
-				
-				if(rc.canLaunch(rc.getLocation().directionTo(towers[0]))){
-					
-				rc.launchMissile(rc.getLocation().directionTo(towers[0]));
-				}
-			}
-			else if(Clock.getRoundNum()>1800){
-				if(rc.canLaunch(rc.getLocation().directionTo(rc.senseEnemyHQLocation()))){
-					rc.launchMissile(rc.getLocation().directionTo(rc.senseEnemyHQLocation()));
-				}
-			}else{
-				
-				RobotInfo[] enemies = rc.senseNearbyRobots(10, enemyTeam);
-				if (enemies.length > 0 && rc.canLaunch(rc.getLocation().directionTo(enemies[0].location))) {
-					rc.launchMissile(rc.getLocation().directionTo(enemies[0].location));
-				}
-				
-			}
 	}
 
 	public static MapLocation findEnemyRobotNear(MapLocation location, int id) {

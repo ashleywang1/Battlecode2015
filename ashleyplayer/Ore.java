@@ -1,4 +1,4 @@
-package huntingplayer;
+package ashleyplayer;
 
 import java.util.Random;
 
@@ -45,6 +45,10 @@ public class Ore {
 				success = RobotPlayer.trySpawn(rc.getLocation().directionTo(oreLoc), RobotType.MINER);
 			}
 			
+			//broadcast and update numMiners
+			if (success) {
+				rc.broadcast(Comms.minerCount, numMiners + 1);			
+			}
 		     
 	        Supply.requestSupply();
 		}
@@ -146,8 +150,6 @@ public class Ore {
 		double ore = surroundingOre(myLoc);
 		int loc = rc.readBroadcast(Comms.bestOreFieldLoc);
 		MapLocation mapCoords = Map.intToLoc(loc);
-		RobotInfo[] enemies = rc.senseNearbyRobots(myRange*2, enemyTeam);
-		int harmless = Map.nearbyRobots(enemies, RobotType.MINER);
 		
 		if (ore > maxOre*9 && myDistance > oreDistance) {
 			
@@ -155,7 +157,7 @@ public class Ore {
 			//System.out.println("HEY FOUND BETTER" + coords); //TODO
 			rc.broadcast(Comms.bestOreFieldLoc, coords);
 			rc.broadcast(Comms.bestOreFieldAmount, (int) (ore/9.0) );
-		} else if (myLoc.equals(mapCoords) && (rc.senseOre(myLoc) < maxOre*9 || enemies.length - harmless > 0)) {
+		} else if (myLoc.equals(mapCoords) && rc.senseOre(myLoc) < maxOre*9) {
 			rc.broadcast(Comms.bestOreFieldAmount, 0);
 			rc.broadcast(Comms.bestOreFieldLoc, 0);
 			//System.out.println("find another minefield");

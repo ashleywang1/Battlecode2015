@@ -1,4 +1,4 @@
-package huntingplayer;
+package ashleyplayer;
 
 import java.util.Random;
 
@@ -23,15 +23,15 @@ public class Army {
 	public static void runBarracks() throws GameActionException {
 		if (rc.isCoreReady()) {
 			if (Clock.getRoundNum() > 200) {
-
 				int helpTower = rc.readBroadcast(Comms.towerDistressCall);
 				if (rc.getTeamOre() > RobotType.BASHER.oreCost && helpTower != 0){
-					RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.BASHER);
+					if (RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.BASHER)) {
+						int numBashers = rc.readBroadcast(Comms.basherCount);
+						rc.broadcast(Comms.basherCount, numBashers + 1);
+					}
 				}
 			}
-	      
-        Supply.requestSupply();
-
+		}
 
 	}
 
@@ -39,7 +39,6 @@ public class Army {
 		
 		Attack.attackTower();
 		moveArmy();
-
 		
 	}
 
@@ -56,6 +55,7 @@ public class Army {
 			int tanks = rc.readBroadcast(Comms.tanksCount);
 			if (rc.getTeamOre() > RobotType.TANK.oreCost) { //&& TFnum>3 && tanks < 50
 				if (RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.TANK)) {
+					rc.broadcast(Comms.tanksCount, tanks + 1);
 					RobotInfo[] defenders = rc.senseNearbyRobots(myHQ, RobotType.HQ.sensorRadiusSquared*2, myTeam);
 					if ( Map.nearbyRobots(defenders, RobotType.TANK) < 3) {
 						rc.broadcast(Comms.TFtoSpawnedTank, 1); //make the tank a defender
@@ -63,7 +63,6 @@ public class Army {
 				}
 			}
 		}
-		Supply.requestSupply();
 	}
 
 	public static void runTank() throws GameActionException {
@@ -71,36 +70,26 @@ public class Army {
 			if (Map.inSafeArea(rc.getLocation())) {
 				Attack.hunt(); //if no enemy in sight, moveArmy
 			} else {
-			    if (Clock.getRoundNum() < 1600) {
-			        Attack.enemyZero();
-			        moveArmy();
-			    } else {
-			        MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
-			        if (enemyTowers.length > 0) {
-			            Map.tryMove(enemyTowers[0]); 
-			            Attack.attackTower();
-			        }else {
-			            Attack.enemyZero();
-			            Map.tryMove(enemyHQ);
-			        }
-
-			    }	
-			}
+				Attack.attackTower();
+				moveArmy();
+			}	
 		}
-		Supply.requestSupplyForGroup();
+				
 	}
 	
 	public static void moveArmy() throws GameActionException {
-
-	    if (rc.isCoreReady()) {
-	        int status = rc.readBroadcast(Comms.memory(rc.getID()));
-	        if (status == 1) { //defend the HQ
-	            tankDefender();
-	        } else {
-	            tankAttacker();
-	        }
-	    }
-
+		
+		if (rc.isCoreReady()) {
+			
+			
+			int status = rc.readBroadcast(Comms.memory(rc.getID()));
+			if (status == 1) { //defend the HQ
+				tankDefender();
+			} else {
+				tankAttacker();
+			}
+		}
+		
 	}
 
 	private static void tankAttacker() throws GameActionException {
@@ -108,7 +97,7 @@ public class Army {
 		int helpTower = rc.readBroadcast(Comms.towerDistressCall);
 		boolean outnumbered = (rc.senseTowerLocations().length < rc.senseEnemyTowerLocations().length + 1);
 		int earlyDefense = rc.readBroadcast(Comms.defensiveRally);
-		if ( Clock.getRoundNum() > 1800) {
+		if (outnumbered && Clock.getRoundNum() > 1800) {
 			groundRush();
 		} else if (helpTower != 0 && rc.getType() == RobotType.SOLDIER) {
 			defendTower(helpTower);
@@ -159,7 +148,7 @@ public class Army {
 		
 	}
 
-	public static void groundRush() throws GameActionException {
+	private static void groundRush() throws GameActionException {
 
 		MapLocation myLoc = rc.getLocation();
 		MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
@@ -170,11 +159,11 @@ public class Army {
 		if (enemyTowers.length > 0) {
 			//destination = enemyTowers[0];
 			destination = Map.nearestTower(enemyTowers);
-			//attack the closest one if they're all together (done in attackTowers)
+			//attack the closest one if they're all together TODO Kelly?
 		}
 		
 		//rally around the destination then move
-		if (myLoc.distanceSquaredTo(destination) > RobotType.TOWER.attackRadiusSquared + 15 || allies.length > 3) {
+		if (myLoc.distanceSquaredTo(destination) > RobotType.TOWER.attackRadiusSquared + 9 || allies.length > 3) {
 			Map.tryMove(destination);
 		}
 		

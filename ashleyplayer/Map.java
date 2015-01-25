@@ -1,4 +1,4 @@
-package huntingplayer;
+package ashleyplayer;
 
 import java.util.Random;
 
@@ -126,23 +126,15 @@ public class Map {
 	
 	public static boolean checkSafety(MapLocation myLoc, Direction dir) {
 		MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
-		RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(25, enemyTeam);
-		
 		boolean tileInFrontSafe = true;
 		MapLocation tileInFront = myLoc.add(dir);
 		for(MapLocation m: enemyTowers){
-			if(m.distanceSquaredTo(tileInFront)<=RobotType.TOWER.attackRadiusSquared){
+			if(m.distanceSquaredTo(tileInFront)<=RobotType.TOWER.attackRadiusSquared + 4){
 				tileInFrontSafe = false;
 				break;
 			}
 		}
-		for(RobotInfo b: nearbyEnemies){
-			if(rc.getLocation().distanceSquaredTo(b.location)<=b.type.attackRadiusSquared){
-				tileInFrontSafe=false;
-				break;
-			}
-		}
-		if (enemyHQ.distanceSquaredTo(tileInFront) < RobotType.HQ.attackRadiusSquared) {
+		if (enemyHQ.distanceSquaredTo(tileInFront) < RobotType.HQ.attackRadiusSquared + 4) {
 			tileInFrontSafe = false;
 		}
 		return tileInFrontSafe;
@@ -180,8 +172,7 @@ public class Map {
 		}
 		//Now actually move
 		//avoid going too far from HQ
-
-		if(rc.getLocation().distanceSquaredTo(myHQ)<2*RobotType.BEAVER.sensorRadiusSquared){
+		if(rc.senseNearbyRobots(myHQ, 2*RobotType.BEAVER.sensorRadiusSquared, myTeam).length >0){
 			if (rc.isCoreReady() && rc.canMove(facing)) {
 				rc.move(facing);
 			}

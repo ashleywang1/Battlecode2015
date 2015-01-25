@@ -1,4 +1,4 @@
-package huntingplayer;
+package classPlayer;
 
 import java.util.Random;
 
@@ -126,23 +126,15 @@ public class Map {
 	
 	public static boolean checkSafety(MapLocation myLoc, Direction dir) {
 		MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
-		RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(25, enemyTeam);
-		
 		boolean tileInFrontSafe = true;
 		MapLocation tileInFront = myLoc.add(dir);
 		for(MapLocation m: enemyTowers){
-			if(m.distanceSquaredTo(tileInFront)<=RobotType.TOWER.attackRadiusSquared){
+			if(m.distanceSquaredTo(tileInFront)<=RobotType.TOWER.attackRadiusSquared + 4){
 				tileInFrontSafe = false;
 				break;
 			}
 		}
-		for(RobotInfo b: nearbyEnemies){
-			if(rc.getLocation().distanceSquaredTo(b.location)<=b.type.attackRadiusSquared){
-				tileInFrontSafe=false;
-				break;
-			}
-		}
-		if (enemyHQ.distanceSquaredTo(tileInFront) < RobotType.HQ.attackRadiusSquared) {
+		if (enemyHQ.distanceSquaredTo(tileInFront) < RobotType.HQ.attackRadiusSquared + 4) {
 			tileInFrontSafe = false;
 		}
 		return tileInFrontSafe;
@@ -180,8 +172,7 @@ public class Map {
 		}
 		//Now actually move
 		//avoid going too far from HQ
-
-		if(rc.getLocation().distanceSquaredTo(myHQ)<2*RobotType.BEAVER.sensorRadiusSquared){
+		if(rc.senseNearbyRobots(myHQ, 2*RobotType.BEAVER.sensorRadiusSquared, myTeam).length >0){
 			if (rc.isCoreReady() && rc.canMove(facing)) {
 				rc.move(facing);
 			}
@@ -256,7 +247,7 @@ public class Map {
 		}
 	}
 	
-    private static Direction findSafeTile() throws GameActionException {
+    public static Direction findSafeTile() throws GameActionException {
 		MapLocation myLoc = rc.getLocation();
 		for (Direction d: directions) {
 			if (checkSafety(myLoc, d) && !rc.isLocationOccupied(myLoc.add(d))) {
@@ -365,6 +356,21 @@ public class Map {
 		return nearestTower;
 	}
 
+	public static MapLocation myNearestTower(MapLocation[] enemyTowers) {
+		MapLocation myLoc = rc.getLocation();
+		MapLocation nearestTower = enemyTowers[0];
+		int minDistance = nearestTower.distanceSquaredTo(myLoc);
+		for (MapLocation tower: enemyTowers) {
+			int dist = tower.distanceSquaredTo(myLoc);
+			if (dist < minDistance) {
+				minDistance = dist;
+				nearestTower = tower;
+			}
+		}
+		return nearestTower;
+	}
+
+	
 	public static void tryMoveAwayFrom(MapLocation enemyLocation) throws GameActionException {
 		int offsetIndex = 0;
 		int[] offsets = {0,1,-1,2,-2};
@@ -387,5 +393,6 @@ public class Map {
 		}		
 	}
 
+	
 
 }

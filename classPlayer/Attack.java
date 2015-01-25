@@ -1,4 +1,4 @@
-package huntingplayer;
+package classPlayer;
 
 import java.util.Random;
 
@@ -29,8 +29,14 @@ public class Attack {
 		if (rc.isCoreReady()) {
 			if (enemyToHunt == -1) {
 				RobotInfo[] enemies = rc.senseNearbyRobots(myRange * 2, enemyTeam);
+				RobotInfo[] allies = rc.senseNearbyRobots(myRange * 2, myTeam);
 				if (enemies.length > 0) {
-					chooseTarget(enemies);
+					if (allies.length > enemies.length) {
+						chooseTarget(enemies);	
+					} else {
+						Map.tryMoveAwayFrom(enemies[0].location);
+					}
+					
 				}
 			}
 			if (enemyToHunt != -1) {
@@ -46,7 +52,7 @@ public class Attack {
 					if(rc.getType()==RobotType.LAUNCHER){
 						launchNearbyMissiles();
 					}
-					else if (rc.canAttackLocation(enemyLocation) && rc.isWeaponReady()) {
+					if (rc.canAttackLocation(enemyLocation) && rc.isWeaponReady()) {
 						rc.attackLocation(enemyLocation);
 					} else {
 						// if we have a larger range than the enemy, try to stay out of their range
@@ -60,7 +66,7 @@ public class Attack {
 						}
 						// else just move towards them
 						else {
-							if (rc.getLocation().distanceSquaredTo(enemyLocation) >2)
+							if (rc.getLocation().distanceSquaredTo(enemyLocation) > rc.getType().attackRadiusSquared)
 								Map.tryMove(enemyLocation);
 						}
 					}
@@ -70,7 +76,7 @@ public class Attack {
 				RobotType type = rc.getType();
 				if (type == RobotType.TANK) {
 					Army.moveArmy();	
-				} else if(type !=RobotType.LAUNCHER){
+				} else {
 					AirForce.moveAirForce();
 				}
 				
@@ -78,28 +84,10 @@ public class Attack {
 		}
 	}
 
-	public static void launchNearbyMissiles() throws GameActionException {
-		RobotInfo[] enemies = rc.senseNearbyRobots(30, enemyTeam);
-		RobotInfo[] myRobots = rc.senseNearbyRobots(25, myTeam);
-		MapLocation[] towers = rc.senseEnemyTowerLocations();
-		
-		boolean missileExist = false;
-		for(RobotInfo b: myRobots){
-			if(b.type == RobotType.MISSILE)
-				missileExist = true;
-		}
-		if (enemies.length > 0  && rc.canLaunch(rc.getLocation().directionTo(enemies[0].location))) {
+	private static void launchNearbyMissiles() throws GameActionException {
+		RobotInfo[] enemies = rc.senseNearbyRobots(10, enemyTeam);
+		if (enemies.length > 0) {
 			rc.launchMissile(rc.getLocation().directionTo(enemies[0].location));
-		}
-		
-		if(towers.length>0 ){
-			MapLocation nearestTower = Map.nearestTower(towers);
-			if(rc.getLocation().distanceSquaredTo(nearestTower) <=25){
-				if(rc.canLaunch(rc.getLocation().directionTo(nearestTower))){
-				
-					rc.launchMissile(rc.getLocation().directionTo(nearestTower));
-			}
-			}
 		}
 		
 	}
@@ -140,7 +128,7 @@ public class Attack {
 			}else{
 				
 				RobotInfo[] enemies = rc.senseNearbyRobots(10, enemyTeam);
-				if (enemies.length > 0 && rc.canLaunch(rc.getLocation().directionTo(enemies[0].location))) {
+				if (enemies.length > 0) {
 					rc.launchMissile(rc.getLocation().directionTo(enemies[0].location));
 				}
 				
@@ -194,9 +182,9 @@ public class Attack {
 	public static void attackTower() throws GameActionException {
 		MapLocation nearbyTower = null;
 		RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(rc.getLocation(),
-				rc.getType().attackRadiusSquared, rc.getTeam().opponent());
+				myRange, enemyTeam);
 
-		if (nearbyEnemies.length > 0 && rc.isWeaponReady()) { // there exists
+		if (nearbyEnemies.length > 0 && rc.isWeaponReady()) { // there exists enemies
 																// enemies near
 			// find the first tower and shoot at it
 			for (RobotInfo info : nearbyEnemies) {
@@ -205,12 +193,36 @@ public class Attack {
 					break;
 				}
 			}
+			
 			if (nearbyTower != null && rc.canAttackLocation(nearbyTower)) {
 				rc.attackLocation(nearbyTower);
 			} else {
 				lowestHP(nearbyEnemies);
 			}
 		}
+	}
+	
+	//Tanks attack any launchers they see
+	public static void launcher() throws GameActionException {
+		RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(myRange*3, enemyTeam);
+		MapLocation target = null;
+
+		if (nearbyEnemies.length > 0 && rc.isWeaponReady()) { // there exists
+																// enemies near
+			// find the first tower and shoot at it
+			for (RobotInfo info : nearbyEnemies) {
+				if (info.type.equals(RobotType.LAUNCHER)) {
+					target = info.location;
+					break;
+				}
+			}
+			if (target != null && rc.canAttackLocation(target)) {
+				rc.attackLocation(target);
+			} else {
+				lowestHP(nearbyEnemies);
+			}
+		}
+		
 	}
 
 }

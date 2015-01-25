@@ -38,9 +38,12 @@ public class Comms {
 	public static final int rushStartRound = 301;
 	public static final int casualties = 302;
 	
+	//Tank information
+	public static final int TFtoSpawnedTank = 305;
+	
 	//Drone information
 	public static final int droneRallyPoint = 303;
-	public static final int droneTarget = 303;
+	public static final int droneTarget = 304;
 	
 	//Supply information
 	public static final int lowestBarracksSupply = 16;

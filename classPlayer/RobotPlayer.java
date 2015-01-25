@@ -1,4 +1,4 @@
-package ashleyplayer;
+package classPlayer;
 
 import java.util.Random;
 
@@ -113,6 +113,8 @@ public class RobotPlayer {
         			AirForce.run16Lab();
         		} else if (rc.getType() == RobotType.LAUNCHER) {
         			AirForce.runLauncher();
+        		} else if(rc.getType() == RobotType.MISSILE){
+        			AirForce.runMissile();
         		}
                 
                 detectEnemies();
@@ -135,17 +137,21 @@ public class RobotPlayer {
 		boolean spawnSuccess = false;
 		
 		Attack.enemyZero();
+		updateRobotCount();
 		
 		if (rc.isCoreReady()) {
+			//RobotInfo[] all = rc.senseNearbyRobots();
+			
+			
 			int numBeavers = rc.readBroadcast(Comms.beaverCount);
 			int maxBeavers = Math.max(3, rc.readBroadcast(Comms.maxBeavers));
 
-			if (rc.getTeamOre() >= 100 && numBeavers < maxBeavers) { 
+			if (rc.getTeamOre() >= RobotType.BEAVER.oreCost && numBeavers < maxBeavers) { 
 				spawnSuccess = trySpawn(directions[rand.nextInt(8)], RobotType.BEAVER);
 				if (spawnSuccess) {
 					
 					rc.broadcast(Comms.HQtoSpawnedBeaver, Math.min(numBeavers, myTowers.length - 1));
-					rc.broadcast(Comms.beaverCount, numBeavers + 1);
+					//rc.broadcast(Comms.beaverCount, numBeavers + 1);
 				}
 			} else if (rc.readBroadcast(Comms.spawnBeaver) == 1) {
 				if (trySpawn(directions[rand.nextInt(8)], RobotType.BEAVER)) {
@@ -156,6 +162,62 @@ public class RobotPlayer {
 		
 	}
 
+
+	private static void updateRobotCount() throws GameActionException { //This method uses about 2000 bytecode
+		RobotInfo[] allMine = rc.senseNearbyRobots(999999, myTeam);
+		
+		int beaver = 0;
+		int miner = 0;
+		int barracks = 0;
+		int soldiers = 0;
+		int bashers = 0;
+		int tankFactory = 0;
+		int tank = 0;
+		int helipad = 0;
+		int drones = 0;
+		int supplyDepot = 0;
+		int aeroLab = 0;
+		int launcher = 0;
+		int[] channels = {Comms.beaverCount, Comms.minerCount, Comms.barracksCount, Comms.soldierCount, Comms.basherCount,
+				Comms.tankfactoryCount, Comms.tanksCount, Comms.helipadCount, Comms.droneCount, Comms.supplydepotCount,
+				Comms.aerospacelabCount, Comms.launcherCount};
+		
+		for (RobotInfo x: allMine) {
+			if (x.type == RobotType.BEAVER) {
+				beaver +=1;
+			} else if (x.type == RobotType.MINER) {
+				miner +=1;
+			} else if (x.type == RobotType.BARRACKS) {
+				barracks +=1;
+			} else if (x.type == RobotType.SOLDIER) {
+				soldiers +=1;
+			} else if (x.type == RobotType.BASHER) {
+				bashers +=1;
+			} else if (x.type == RobotType.TANKFACTORY) {
+				tankFactory +=1;
+			} else if (x.type == RobotType.TANK) {
+				tank +=1;
+			} else if (x.type == RobotType.HELIPAD) {
+				helipad +=1;
+			} else if (x.type == RobotType.DRONE) {
+				drones +=1;
+			} else if (x.type == RobotType.SUPPLYDEPOT) {
+				supplyDepot +=1;
+			}  else if (x.type == RobotType.AEROSPACELAB) {
+				aeroLab +=1;
+			}  else if (x.type == RobotType.LAUNCHER) {
+				launcher +=1;
+			} 
+		}
+		
+		int[] rollCall = {beaver, miner, barracks, soldiers, bashers, tankFactory, tank, helipad, drones, supplyDepot, aeroLab,
+				launcher};
+		
+		for (int i=0; i < rollCall.length; i++) {
+			rc.broadcast(channels[i], rollCall[i]);
+		}
+		
+	}
 
 	private static void runTower() throws GameActionException {
 		Attack.lowestHP(Attack.getEnemiesInAttackingRange(RobotType.TOWER));
@@ -176,33 +238,90 @@ public class RobotPlayer {
 		}
 		Attack.enemyZero();
 		if (rc.isCoreReady()) {
-			int MFnum = rc.readBroadcast(Comms.miningfactoryCount);
-			int helipadNum = rc.readBroadcast(Comms.helipadCount);
-			int supplyNum = rc.readBroadcast(Comms.supplydepotCount);
-			int barracks = rc.readBroadcast(Comms.barracksCount);
-			int TFnum = rc.readBroadcast(Comms.tankfactoryCount);
-			double myOre = rc.getTeamOre();
-			
-			if (MFnum == 0) {
-				becomeHQMiningFactory(MFnum);
-			} else if(barracks==0){
-				becomeHQBarracks(barracks); //just want bashers
-			} else if (TFnum == 0) {
-				becomeHQTankFactory();
-			} else if (TFnum < 3 || myOre > 3000) {
-				becomeTankFactory();
-			} else if (helipadNum < 1 || myOre > 2000) {
-				becomeHelipad();
-			} else if (MFnum < 2) {
-				becomeMiningFactory(MFnum);
-			} else if (supplyNum < 5) {
-				becomeSuppliers();
-			} else {
-				beaverMine();
-			}	
+			//tankStrategy();
+			classStrategy();
+			//launcherStrategy();
 			
 		}
 	}
+	
+	private static void classStrategy() throws GameActionException {
+		int MFnum = rc.readBroadcast(Comms.miningfactoryCount);
+		int helipadNum = rc.readBroadcast(Comms.helipadCount);
+		int supplyNum = rc.readBroadcast(Comms.supplydepotCount);
+		int barracks = rc.readBroadcast(Comms.barracksCount);
+		int TFnum = rc.readBroadcast(Comms.tankfactoryCount);
+		int labs = rc.readBroadcast(Comms.aerospacelabCount);
+		double myOre = rc.getTeamOre();
+		
+		if (MFnum == 0) {
+			becomeHQMiningFactory(MFnum);
+		} else if(barracks==0){
+			becomeHQBarracks(barracks); //just want bashers
+		} else if (TFnum < 3 || myOre > 3000) {
+			becomeHQTankFactory();
+		} else {
+			if (MFnum < 2 && Clock.getRoundNum() < 1000) {
+				becomeMiningFactory(MFnum);
+			}  else if (supplyNum < 5) {
+				becomeSuppliers();
+			} 	
+		}
+		
+	}
+
+	private static void tankStrategy() throws GameActionException {
+		int MFnum = rc.readBroadcast(Comms.miningfactoryCount);
+		int helipadNum = rc.readBroadcast(Comms.helipadCount);
+		int supplyNum = rc.readBroadcast(Comms.supplydepotCount);
+		int barracks = rc.readBroadcast(Comms.barracksCount);
+		int TFnum = rc.readBroadcast(Comms.tankfactoryCount);
+		double myOre = rc.getTeamOre();
+		
+		if (MFnum == 0) {
+			becomeHQMiningFactory(MFnum);
+		} else if(barracks==0){
+			becomeHQBarracks(barracks); //just want bashers
+		} else if (TFnum == 0) {
+			becomeHQTankFactory();
+		} else if (TFnum < 3 || myOre > 3000) {
+			becomeHQTankFactory();
+		} else if (helipadNum < 1 ) {
+			becomeHelipad();
+		} else if (MFnum < 2) {
+			becomeMiningFactory(MFnum);
+		} else if (supplyNum < 5) {
+			becomeSuppliers();
+		} 
+	}
+
+	private static void launcherStrategy() throws GameActionException {
+		int MFnum = rc.readBroadcast(Comms.miningfactoryCount);
+		int helipadNum = rc.readBroadcast(Comms.helipadCount);
+		int supplyNum = rc.readBroadcast(Comms.supplydepotCount);
+		int aeroNum = rc.readBroadcast(Comms.aerospacelabCount);
+		int barracks = rc.readBroadcast(Comms.barracksCount);
+		int TFnum = rc.readBroadcast(Comms.tankfactoryCount);
+		
+		if (MFnum == 0) {
+			becomeHQMiningFactory(MFnum);
+		} else if (helipadNum < 1) {
+			becomeHelipad();
+		} else if(aeroNum<2){
+			becomeAeroLab();
+		} else if(barracks==0){
+			becomeHQBarracks(barracks); //just want bashers
+		} else if (MFnum < 2) {
+			becomeHQMiningFactory(MFnum);
+		
+		} else if (TFnum <3) {
+			becomeHQTankFactory();
+		} else if(supplyNum<10)
+			becomeSuppliers();
+	
+}
+		
+	
 	
 	//All beaver transformation methods
 
@@ -212,21 +331,25 @@ public class RobotPlayer {
 		MapLocation myLoc = rc.getLocation();
 		
 		double block = Ore.surroundingOre(myLoc);
-		if (block >= maxOreFound*9 ) {
+		if (block >= maxOreFound - 10 ) {
 			RobotInfo[] neighbors = rc.senseNearbyRobots(myRange);
 			int nearbyMF = Map.nearbyRobots(neighbors, RobotType.MINERFACTORY);
 			
 			if (rc.getTeamOre() >= 500 && nearbyMF == 0) {
-				boolean success = tryBuild(directions[rand.nextInt(8)],RobotType.MINERFACTORY);
-				if (success) {
-					rc.broadcast(Comms.miningfactoryCount, numMiningFactories + 1);
-				}	
+				tryBuild(directions[rand.nextInt(8)],RobotType.MINERFACTORY);
+
 			} else {
 				beaverMine();		
 			}
 		} else {
 			if (oreFieldLoc != 0) {
-				Map.tryMove(Map.intToLoc(oreFieldLoc));
+				MapLocation oreLocation = Map.intToLoc(oreFieldLoc);
+				if (myLoc.distanceSquaredTo(oreLocation) > 30) {
+					Map.tryMove(oreLocation);	
+				} else {
+					Map.randomMove();
+				}
+				
 			} else {
 				Direction awayFromHQ = myHQ.directionTo(rc.getLocation());
 				Map.wanderToward(awayFromHQ, .7);
@@ -260,14 +383,18 @@ public class RobotPlayer {
 	private static void becomeHQTankFactory() throws GameActionException {
 		MapLocation myLoc = rc.getLocation();
 		
-		if (rc.hasBuildRequirements(RobotType.TANKFACTORY) && myLoc.distanceSquaredTo(myHQ) < 5) {
+		if (rc.hasBuildRequirements(RobotType.TANKFACTORY) && myLoc.distanceSquaredTo(myHQ) < 15) {
 			boolean success = tryBuild(directions[rand.nextInt(8)], RobotType.TANKFACTORY);
 			if (success) {
 				int TFnum = rc.readBroadcast(Comms.tankfactoryCount);
 				rc.broadcast(Comms.tankfactoryCount, TFnum + 1);
 			}
 		} else {
-			Map.tryMove(myHQ);
+			if (myLoc.distanceSquaredTo(myHQ) > 15) {
+				Map.wanderTo(myHQ, .9);	
+			} else {
+				beaverMine();
+			}
 		}
 	}
 	
@@ -295,11 +422,9 @@ public class RobotPlayer {
 	
 	private static void becomeSuppliers() throws GameActionException {
 		int numSupplyDepots = rc.readBroadcast(Comms.supplydepotCount);
-		if (rc.getTeamOre() >= RobotType.SUPPLYDEPOT.oreCost) {
+		RobotInfo[] neighbors = rc.senseNearbyRobots(myRange, myTeam);
+		if (rc.getTeamOre() >= RobotType.SUPPLYDEPOT.oreCost && neighbors.length < 2) {
             boolean success = tryBuild(directions[rand.nextInt(8)], RobotType.SUPPLYDEPOT);
-            if (success) {
-                rc.broadcast(Comms.supplydepotCount, numSupplyDepots + 1);
-            }
         }else {
 			//Map.beaverMove();
         	beaverMine();
@@ -318,12 +443,32 @@ public class RobotPlayer {
 		}
 	}
 	
+	private static void becomeAeroLab() throws GameActionException {
+		int dest = rc.readBroadcast(Comms.memory(rc.getID()));
+		MapLocation destination = Map.intToLoc(dest);
+		MapLocation myLoc = rc.getLocation();
+		RobotInfo[] neighbors = rc.senseNearbyRobots(myRange);
+		if (rc.hasBuildRequirements(RobotType.AEROSPACELAB)) {
+			if (rc.getTeamOre() > RobotType.AEROSPACELAB.oreCost) {
+				boolean success = tryBuild(directions[rand.nextInt(8)], RobotType.AEROSPACELAB);
+				if (success) {
+					int aeroNum= rc.readBroadcast(Comms.aerospacelabCount);
+					rc.broadcast(Comms.aerospacelabCount, aeroNum + 1);
+				}
+			}
+		} else {
+			Map.beaverMove();
+			//beaverMine();
+			//Map.tryMove(destination);
+		}
+		
+	}
 
 	private static void beaverMine() throws GameActionException {
 		if (rc.senseOre(rc.getLocation()) > 1){
 			rc.mine();	
 		} else {
-			Ore.minerMove(rc.getLocation());
+			Map.randomMove();
 		}
 		
 	}
@@ -373,8 +518,8 @@ public class RobotPlayer {
         double transferAmount = rc.getSupplyLevel();
         MapLocation suppliesToThisLocation = null;
         for(RobotInfo ri:nearbyAllies){
-            if (ri.type == RobotType.TOWER || ri.type == RobotType.HQ || 
-            		(!isHQ && ri.type == RobotType.BEAVER))
+            if (ri.type == RobotType.TOWER || ri.type == RobotType.HQ || ri.type == RobotType.MISSILE 
+            		|| (!isHQ && ri.type == RobotType.DRONE))		
                 continue;
             if(ri.supplyLevel<lowestSupply){
                 lowestSupply = ri.supplyLevel;
