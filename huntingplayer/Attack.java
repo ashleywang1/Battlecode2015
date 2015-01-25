@@ -87,11 +87,11 @@ public class Attack {
 			if(b.type == RobotType.MISSILE)
 				missileExist = true;
 		}
-		if (missileExist == false && enemies.length > 0  && rc.canLaunch(rc.getLocation().directionTo(enemies[0].location))) {
+		if (enemies.length > 0  && rc.canLaunch(rc.getLocation().directionTo(enemies[0].location))) {
 			rc.launchMissile(rc.getLocation().directionTo(enemies[0].location));
 		}
 		
-		if(missileExist ==false && towers.length>0 && rc.getLocation().distanceSquaredTo(towers[0]) <=25){
+		if(towers.length>0 && rc.getLocation().distanceSquaredTo(towers[0]) <=25){
 			
 			if(rc.canLaunch(rc.getLocation().directionTo(towers[0]))){
 				

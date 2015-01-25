@@ -131,7 +131,7 @@ public class Map {
 		boolean tileInFrontSafe = true;
 		MapLocation tileInFront = myLoc.add(dir);
 		for(MapLocation m: enemyTowers){
-			if(m.distanceSquaredTo(tileInFront)<=RobotType.TOWER.attackRadiusSquared-5){
+			if(m.distanceSquaredTo(tileInFront)<=RobotType.TOWER.attackRadiusSquared){
 				tileInFrontSafe = false;
 				break;
 			}
@@ -142,7 +142,7 @@ public class Map {
 				break;
 			}
 		}
-		if (enemyHQ.distanceSquaredTo(tileInFront) < RobotType.HQ.attackRadiusSquared-5) {
+		if (enemyHQ.distanceSquaredTo(tileInFront) < RobotType.HQ.attackRadiusSquared) {
 			tileInFrontSafe = false;
 		}
 		return tileInFrontSafe;

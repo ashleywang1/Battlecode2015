@@ -117,9 +117,11 @@ public class RobotPlayer {
         			AirForce.runMissile();
         		}
        
+                if(rc.getType()!=RobotType.MISSILE){
                 detectEnemies();
         		transferSupplies();
         		Ore.goProspecting();
+                }
         		
         		
         		

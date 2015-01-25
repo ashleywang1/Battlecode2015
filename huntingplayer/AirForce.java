@@ -73,8 +73,11 @@ public class AirForce {
 	public static void runMissile() throws GameActionException {
 		RobotInfo[] enemies = rc.senseNearbyRobots(25, enemyTeam);
 		if(rc.isCoreReady()){
-			System.out.println("Missile headed toward tower from " + rc.getLocation());
+
 			if (enemies.length > 0 && rc.canMove(rc.getLocation().directionTo(enemies[0].location))) {
+				
+				//System.out.println("Missile headed toward tower from " + rc.getLocation());
+				rc.setIndicatorString(0,"trying to move "+Clock.getRoundNum() +  rc.canMove(rc.getLocation().directionTo(enemies[0].location)));
 				rc.move(rc.getLocation().directionTo(enemies[0].location));
 			}
 		}
