@@ -39,18 +39,9 @@ public class Supply {
         if (type == RobotType.BARRACKS) {
             supplyChannel = Comms.lowestBarracksSupply;
             supplyLocChannel = Comms.lowestBarracksSupplyLoc;
-        } else if (type == RobotType.MINERFACTORY) {
+        } else {
             supplyChannel = Comms.lowestMiningFactorySupply;
             supplyLocChannel = Comms.lowestMiningFactorySupplyLoc;
-        } else if (type == RobotType.HELIPAD) {
-            supplyChannel = Comms.lowestHelipadSupply;
-            supplyLocChannel = Comms.lowestHelipadSupplyLoc;
-        } else if (type == RobotType.AEROSPACELAB) {
-            supplyChannel = Comms.lowestAerospaceLabSupply;
-            supplyLocChannel = Comms.lowestAerospaceLabSupplyLoc;
-        } else {
-            supplyChannel = Comms.lowestTankFactorySupply;
-            supplyLocChannel = Comms.lowestTankFactorySupplyLoc;
         }
 	    MapLocation currentLoc = rc.getLocation();
 	    double currentSupply = rc.getSupplyLevel();
@@ -66,18 +57,12 @@ public class Supply {
 	public static void requestSupplyForGroup() throws GameActionException {
 	    RobotType type = rc.getType();
 	    int supplyChannel, supplyLocChannel;
-	    if (type == RobotType.BASHER) {
-	        supplyChannel = Comms.lowestBasherSupply;
-	        supplyLocChannel = Comms.lowestBasherSupplyLoc;
-	    } else if (type == RobotType.MINER) {
+	    if (type == RobotType.SOLDIER) {
+	        supplyChannel = Comms.lowestSoldierSupply;
+	        supplyLocChannel = Comms.lowestSoldierSupplyLoc;
+	    } else {
 	        supplyChannel = Comms.lowestMinerSupply;
 	        supplyLocChannel = Comms.lowestMinerSupplyLoc;
-	    } else if (type == RobotType.LAUNCHER) {
-	        supplyChannel = Comms.lowestLauncherSupply;
-	        supplyLocChannel = Comms.lowestLauncherSupplyLoc;
-	    } else {
-	        supplyChannel = Comms.lowestTankSupply;
-	        supplyLocChannel = Comms.lowestTankSupplyLoc;
 	    }
 	    MapLocation currentLoc = rc.getLocation();
 	    double currentSupply = 0;
@@ -88,14 +73,14 @@ public class Supply {
 	    
 	    double avgSupply = currentSupply / neighbors.length;
 	    int strategy = rc.readBroadcast(200);
-	    if (avgSupply < 30 && avgSupply <= rc.readBroadcast(supplyChannel)) {
+	    if (avgSupply < 30 && avgSupply < rc.readBroadcast(supplyChannel)) {
 	        rc.broadcast(supplyChannel, (int) avgSupply);
 	        rc.broadcast(supplyLocChannel, Map.locToInt(currentLoc));
-            System.out.println(avgSupply + " lowest avg supply");
+            //System.out.println(avgSupply + " lowest avg supply");
 	    } else if (strategy == 1){
 	    	rc.broadcast(supplyChannel, 0);
 	    	rc.broadcast(supplyLocChannel, Map.locToInt(currentLoc));
-	    } else if (avgSupply > 30 && rc.readBroadcast(supplyLocChannel) - Map.locToInt(currentLoc) < 10) {
+	    } else if (avgSupply > 30 && rc.readBroadcast(supplyLocChannel) == Map.locToInt(currentLoc)) {
 	        rc.broadcast(supplyChannel, 10000);
 	    }
 	}

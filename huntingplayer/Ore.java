@@ -33,9 +33,9 @@ public class Ore {
 		boolean success = false;
 		int numMiners = rc.readBroadcast(Comms.minerCount);
 		int round = Clock.getRoundNum();
-		if (rc.isCoreReady() && numMiners < 100 && 
+		if (rc.isCoreReady() && numMiners < 80 &&
 				((rc.getTeamOre() >= RobotType.MINER.oreCost && round < 400) || 
-						(rc.getTeamOre() >= RobotType.MINER.oreCost + RobotType.TANK.oreCost))) {
+						(rc.getTeamOre() >= RobotType.MINER.oreCost + RobotType.LAUNCHER.oreCost))) {
 			int oreFields = rc.readBroadcast(Comms.bestOreFieldLoc);
 			
 			if (oreFields == 0) {
@@ -79,7 +79,7 @@ public class Ore {
 			}
 		}
 		
-		Supply.requestSupplyForGroup();
+		//Supply.requestSupplyForGroup();
 		
 	}
 	

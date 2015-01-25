@@ -50,20 +50,11 @@ public class Comms {
 	public static final int lowestBarracksSupplyLoc = 17;
 	public static final int lowestMiningFactorySupply = 18;
 	public static final int lowestMiningFactorySupplyLoc = 19;
-	public static final int lowestBasherSupply = 20;
-	public static final int lowestBasherSupplyLoc = 21;
+	public static final int lowestSoldierSupply = 20;
+	public static final int lowestSoldierSupplyLoc = 21;
 	public static final int lowestMinerSupply = 22;
 	public static final int lowestMinerSupplyLoc = 23;
-	public static final int lowestTankSupply = 28;
-	public static final int lowestTankSupplyLoc = 29;
-	public static final int lowestHelipadSupply = 30;
-	public static final int lowestHelipadSupplyLoc = 31;
-	public static final int lowestTankFactorySupply = 32;
-	public static final int lowestTankFactorySupplyLoc = 33;
-	public static final int lowestLauncherSupply = 34;
-	public static final int lowestLauncherSupplyLoc = 35;
-	public static final int lowestAerospaceLabSupply = 36;
-	public static final int lowestAerospaceLabSupplyLoc = 37;
+	
 	
 	//strategy
 	public static final int strategy = 200; //channel to broadcast which strategy for attacking towers
