@@ -29,16 +29,18 @@ public class AirForce {
 	static int rotation = -1;
 
 	public static void runHelipad() throws GameActionException {
-		if (rc.isCoreReady()) {
-			int numDrones = rc.readBroadcast(Comms.droneCount);
-			if (rc.getTeamOre() > RobotType.DRONE.oreCost && numDrones < 10) { //&& numDrones < 100
-				if (RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.DRONE)) {
-				    
-					rc.broadcast(Comms.droneCount, numDrones + 1);
-			if (rc.getTeamOre() > RobotType.DRONE.oreCost + RobotType.TANK.oreCost && numDrones < 10) {
-				RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.DRONE);
-			}
-		}
+	    if (rc.isCoreReady()) {
+	        int numDrones = rc.readBroadcast(Comms.droneCount);
+	        if (rc.getTeamOre() > RobotType.DRONE.oreCost && numDrones < 10) { //&& numDrones < 100
+	            if (RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.DRONE)) {
+
+	                rc.broadcast(Comms.droneCount, numDrones + 1);
+	                if (rc.getTeamOre() > RobotType.DRONE.oreCost + RobotType.TANK.oreCost && numDrones < 10) {
+	                    RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.DRONE);
+	                }
+	            }
+	        }
+	    }
 		
 	}
 	
@@ -151,9 +153,6 @@ public class AirForce {
 				droneRush();
 			} else if (helpTower != 0) {
 				defendTower(helpTower);
-			} else if (numDrones < 100 && strategy != 1) { 
-				//rallyAround(myHQ);
-				containHQ();
 			} else if (droneDefense != 0 && numDrones < 20) {
 				int radius = RobotType.HQ.attackRadiusSquared + 25;
 				if (rc.getLocation().distanceSquaredTo(myHQ) < radius) {
@@ -251,11 +250,11 @@ public class AirForce {
 	}
 
 	private static void rallyContain(MapLocation rallyPoint, int radius) throws GameActionException {
-		if (myLoc.distanceSquaredTo(rallyPoint) > radius) {
-			rallyAround(rallyPoint);
-		} else {
-			Map.randomMove();
-		}
+//		if (myLoc.distanceSquaredTo(rallyPoint) > radius) {
+//			rallyAround(rallyPoint);
+//		} else {
+//			Map.randomMove();
+//		}
 		
 		//TODO
 	}

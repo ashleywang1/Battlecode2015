@@ -22,17 +22,16 @@ public class Army {
 
 	public static void runBarracks() throws GameActionException {
 		if (rc.isCoreReady()) {
-			if (Clock.getRoundNum() > 200) {
+		    if (Clock.getRoundNum() > 200) {
 
-				int helpTower = rc.readBroadcast(Comms.towerDistressCall);
-				if (rc.getTeamOre() > RobotType.BASHER.oreCost && helpTower != 0){
-					RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.BASHER);
-				}
-			}
-	      
-        Supply.requestSupply();
-
-
+		        int helpTower = rc.readBroadcast(Comms.towerDistressCall);
+		        if (rc.getTeamOre() > RobotType.BASHER.oreCost && helpTower != 0){
+		            RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.BASHER);
+		        }
+		    }
+		}
+		
+		Supply.requestSupply();
 	}
 
 	public static void runSoldier() throws GameActionException {
