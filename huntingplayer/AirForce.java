@@ -41,20 +41,28 @@ public class AirForce {
 	public static void runLauncher() throws GameActionException {
 			int currentRound = Clock.getRoundNum();
 			double n = rand.nextDouble();
-			if ( n < .5) {
-				if (n < .25) {
-					facing = facing.rotateLeft();
-				} else {
-					facing = facing.rotateRight();
-				}
-			}
+
 			MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
-			Attack.launchNearbyMissiles();
+			MapLocation[] myTowers = rc.senseTowerLocations();
+			RobotInfo [] nearbyFriends = rc.senseNearbyRobots(25, myTeam);
+			int numLaunch = Map.nearbyRobots(nearbyFriends, RobotType.LAUNCHER);
 			
+			Attack.launchNearbyMissiles();
+			if(numLaunch<5){
+				if(myTowers.length>0){
+					MapLocation nearestMyTower = Map.nearestTower(myTowers);
+					if(rc.isCoreReady())
+						Map.safeMove(nearestMyTower);
+				}
+			}else{
 				if(rc.isCoreReady() && enemyTowers.length>0)
 					Map.safeMove(enemyTowers[0]);
 				else if (rc.isCoreReady())
 					Map.safeMove(enemyHQ);
+			}
+
+			
+
 			
 //			if(currentRound>1600){
 //				if(rc.isCoreReady())

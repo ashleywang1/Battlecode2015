@@ -82,6 +82,7 @@ public class Attack {
 		RobotInfo[] enemies = rc.senseNearbyRobots(30, enemyTeam);
 		RobotInfo[] myRobots = rc.senseNearbyRobots(25, myTeam);
 		MapLocation[] towers = rc.senseEnemyTowerLocations();
+		
 		boolean missileExist = false;
 		for(RobotInfo b: myRobots){
 			if(b.type == RobotType.MISSILE)
@@ -91,11 +92,13 @@ public class Attack {
 			rc.launchMissile(rc.getLocation().directionTo(enemies[0].location));
 		}
 		
-		if(towers.length>0 && rc.getLocation().distanceSquaredTo(towers[0]) <=25){
-			
-			if(rc.canLaunch(rc.getLocation().directionTo(towers[0]))){
+		if(towers.length>0 ){
+			MapLocation nearestTower = Map.nearestTower(towers);
+			if(rc.getLocation().distanceSquaredTo(nearestTower) <=25){
+				if(rc.canLaunch(rc.getLocation().directionTo(nearestTower))){
 				
-			rc.launchMissile(rc.getLocation().directionTo(towers[0]));
+					rc.launchMissile(rc.getLocation().directionTo(nearestTower));
+			}
 			}
 		}
 		
