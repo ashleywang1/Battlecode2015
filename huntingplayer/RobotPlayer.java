@@ -23,7 +23,11 @@ public class RobotPlayer {
 	
 	static Random rand;
 	static Direction[] directions = {Direction.NORTH, Direction.NORTH_EAST, Direction.EAST, Direction.SOUTH_EAST, Direction.SOUTH, Direction.SOUTH_WEST, Direction.WEST, Direction.NORTH_WEST};
+<<<<<<< HEAD
 	static RobotType[] structures = {RobotType.MINERFACTORY, RobotType.TANKFACTORY, RobotType.BARRACKS, RobotType.HELIPAD, RobotType.AEROSPACELAB, RobotType.SUPPLYDEPOT};
+=======
+	static RobotType[] structures = {RobotType.MINERFACTORY, RobotType.BARRACKS, RobotType.HELIPAD};
+>>>>>>> 3c5a116a98ec71780232587848ca6d8484cea297
 	
 	static int towerThreat;
 	static double navigability;
@@ -61,7 +65,24 @@ public class RobotPlayer {
 			}
 			
 		}
+<<<<<<< HEAD
 				
+=======
+
+        int round = Clock.getRoundNum();
+        if (round < 1) {
+            rc.broadcast(Comms.lowestBarracksSupply, 10000);
+            rc.broadcast(Comms.lowestMiningFactorySupply, 10000);
+            rc.broadcast(Comms.lowestBasherSupply, 10000);
+            rc.broadcast(Comms.lowestMinerSupply, 10000);
+            rc.broadcast(Comms.lowestTankSupply, 10000);
+            rc.broadcast(Comms.lowestHelipadSupply, 10000);
+            rc.broadcast(Comms.lowestTankFactorySupply, 10000);
+            rc.broadcast(Comms.lowestLauncherSupply, 10000);
+            rc.broadcast(Comms.lowestAerospaceLabSupply, 10000);
+        }
+
+>>>>>>> 3c5a116a98ec71780232587848ca6d8484cea297
 		while(true) {
 			try {
 				//information
@@ -118,6 +139,7 @@ public class RobotPlayer {
         			AirForce.runMissile();
         		}
        
+<<<<<<< HEAD
                 
                 if(rc.getType()!=RobotType.MISSILE){
                     //detectEnemies();
@@ -128,6 +150,16 @@ public class RobotPlayer {
                 }
         		
         		
+=======
+                if(rc.getType()!=RobotType.MISSILE){
+                detectEnemies();
+        		transferSupplies();
+        		Ore.goProspecting();
+                }
+        		
+        		
+        		
+>>>>>>> 3c5a116a98ec71780232587848ca6d8484cea297
             } catch (Exception e) {
                 System.out.println("Unexpected exception");
                 e.printStackTrace();
@@ -149,7 +181,11 @@ public class RobotPlayer {
 			
 			
 			int numBeavers = rc.readBroadcast(Comms.beaverCount);
+<<<<<<< HEAD
 			int maxBeavers = Math.max(1, rc.readBroadcast(Comms.maxBeavers));
+=======
+			int maxBeavers = Math.max(3, rc.readBroadcast(Comms.maxBeavers));
+>>>>>>> 3c5a116a98ec71780232587848ca6d8484cea297
 
 			if (rc.getTeamOre() >= RobotType.BEAVER.oreCost && numBeavers < maxBeavers) { 
 				spawnSuccess = trySpawn(directions[rand.nextInt(8)], RobotType.BEAVER);
@@ -264,13 +300,21 @@ public class RobotPlayer {
 			becomeHQBarracks(barracks); //just want bashers
 		} else if (TFnum == 0) {
 			becomeHQTankFactory();
+<<<<<<< HEAD
 		} else if (TFnum < 3 || myOre > 3000) {
+=======
+		} else if (TFnum < 6 || myOre > 3000) {
+>>>>>>> 3c5a116a98ec71780232587848ca6d8484cea297
 			becomeHQTankFactory();
 		} else if (helipadNum < 1 ) {
 			becomeHelipad();
 		} else if (MFnum < 2) {
 			becomeMiningFactory(MFnum);
+<<<<<<< HEAD
 		} else if (supplyNum < 15) {
+=======
+		} else if (supplyNum < 5) {
+>>>>>>> 3c5a116a98ec71780232587848ca6d8484cea297
 			becomeSuppliers();
 		} 
 	}
@@ -392,8 +436,12 @@ public class RobotPlayer {
 	
 	private static void becomeSuppliers() throws GameActionException {
 		int numSupplyDepots = rc.readBroadcast(Comms.supplydepotCount);
+<<<<<<< HEAD
 		RobotInfo[] neighbors = rc.senseNearbyRobots(myRange);
 		if (rc.getTeamOre() >= RobotType.SUPPLYDEPOT.oreCost && neighbors.length < 3) {
+=======
+		if (rc.getTeamOre() >= RobotType.SUPPLYDEPOT.oreCost) {
+>>>>>>> 3c5a116a98ec71780232587848ca6d8484cea297
             boolean success = tryBuild(directions[rand.nextInt(8)], RobotType.SUPPLYDEPOT);
             if (success) {
                 rc.broadcast(Comms.supplydepotCount, numSupplyDepots + 1);
@@ -421,7 +469,11 @@ public class RobotPlayer {
 		MapLocation destination = Map.intToLoc(dest);
 		MapLocation myLoc = rc.getLocation();
 		RobotInfo[] neighbors = rc.senseNearbyRobots(myRange);
+<<<<<<< HEAD
 		if (rc.hasBuildRequirements(RobotType.AEROSPACELAB) && neighbors.length < 3) {
+=======
+		if (rc.hasBuildRequirements(RobotType.AEROSPACELAB)) {
+>>>>>>> 3c5a116a98ec71780232587848ca6d8484cea297
 			if (rc.getTeamOre() > RobotType.AEROSPACELAB.oreCost) {
 				boolean success = tryBuild(directions[rand.nextInt(8)], RobotType.AEROSPACELAB);
 				if (success) {
@@ -484,15 +536,27 @@ public class RobotPlayer {
 	
 	//Methods that every robot will use
 	
+<<<<<<< HEAD
 	private static void transferSupplies() throws GameActionException {
 	    boolean isHQ = rc.getType() == RobotType.HQ;
+=======
+    private static void transferSupplies() throws GameActionException {
+        boolean isHQOrSupplyDepot = rc.getType() == RobotType.HQ || rc.getType() == RobotType.SUPPLYDEPOT;
+        boolean isDrone = rc.getType() == RobotType.DRONE;
+>>>>>>> 3c5a116a98ec71780232587848ca6d8484cea297
         RobotInfo[] nearbyAllies = rc.senseNearbyRobots(rc.getLocation(),GameConstants.SUPPLY_TRANSFER_RADIUS_SQUARED,rc.getTeam());
         double lowestSupply = rc.getSupplyLevel();
         double transferAmount = rc.getSupplyLevel();
         MapLocation suppliesToThisLocation = null;
         for(RobotInfo ri:nearbyAllies){
+<<<<<<< HEAD
             if (ri.type == RobotType.TOWER || ri.type == RobotType.HQ || ri.type == RobotType.MISSILE || 
             		Arrays.asList(structures).contains(ri.type) || (!isHQ && ri.type == RobotType.DRONE))		
+=======
+            if (ri.type == RobotType.TOWER || ri.type == RobotType.HQ || ri.type == RobotType.MISSILE 
+            if (ri.type == RobotType.TOWER || ri.type == RobotType.HQ || 
+                    (!isHQOrSupplyDepot && ri.type == RobotType.DRONE) || (isBuilding(ri.type) && ri.supplyLevel > 300)) //|| (isBeaver && ri.supplyLevel > 10)
+>>>>>>> 3c5a116a98ec71780232587848ca6d8484cea297
                 continue;
             if(ri.supplyLevel<lowestSupply){
                 lowestSupply = ri.supplyLevel;
@@ -505,11 +569,26 @@ public class RobotPlayer {
                 suppliesToThisLocation = ri.location;
             }
         }
+<<<<<<< HEAD
         if(suppliesToThisLocation!=null && transferAmount > 0){
         	
             rc.transferSupplies((int)transferAmount, suppliesToThisLocation);
         }
     }
+=======
+        try{
+        if(suppliesToThisLocation!=null && transferAmount > 0){
+            rc.transferSupplies((int)transferAmount, suppliesToThisLocation);
+        }
+        }catch(Exception e){
+        	e.printStackTrace();
+        }
+    }
+
+    private static boolean isBuilding(RobotType type) {
+        return type == RobotType.BARRACKS || type == RobotType.MINERFACTORY || type == RobotType.HELIPAD;
+    }
+>>>>>>> 3c5a116a98ec71780232587848ca6d8484cea297
 	
 	private static void detectEnemies() throws GameActionException {
 		RobotType type = rc.getType();

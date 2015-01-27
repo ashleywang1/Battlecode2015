@@ -137,7 +137,7 @@ public class Map {
 			}
 		}
 		for(RobotInfo b: nearbyEnemies){
-			if(rc.getLocation().distanceSquaredTo(b.location)<=b.type.attackRadiusSquared){
+			if(rc.getLocation().distanceSquaredTo(b.location)<=b.type.attackRadiusSquared + 5){
 				tileInFrontSafe=false;
 				break;
 			}

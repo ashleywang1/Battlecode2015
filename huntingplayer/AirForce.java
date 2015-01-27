@@ -33,6 +33,11 @@ public class AirForce {
 			int numDrones = rc.readBroadcast(Comms.droneCount);
 			if (rc.getTeamOre() > RobotType.DRONE.oreCost + RobotType.TANK.oreCost && numDrones < 10) {
 				RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.DRONE);
+<<<<<<< HEAD
+=======
+	                rc.broadcast(Comms.droneCount, numDrones + 1);
+	                }
+>>>>>>> 3c5a116a98ec71780232587848ca6d8484cea297
 			}
 		}
 		
@@ -43,11 +48,13 @@ public class AirForce {
 			MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
 			MapLocation[] myTowers = rc.senseTowerLocations();
 			RobotInfo [] nearbyFriends = rc.senseNearbyRobots(25, myTeam);
+			RobotInfo [] nearbyEnemies = rc.senseNearbyRobots(50, enemyTeam);
 			int numLaunch = Map.nearbyRobots(nearbyFriends, RobotType.LAUNCHER);
 
 			int helpTower = rc.readBroadcast(Comms.towerDistressCall);
 			//boolean outnumbered = (rc.senseTowerLocations().length < rc.senseEnemyTowerLocations().length + 1);
 			
+<<<<<<< HEAD
 			Attack.launchNearbyMissiles();
 			
 			if (rc.isCoreReady()) {
@@ -65,6 +72,43 @@ public class AirForce {
 					defendTower(helpTower);
 				} else 
 				*/	
+=======
+			MapLocation nearestLauncher = null;
+			for (RobotInfo x: nearbyFriends) {
+				if (x.type == RobotType.LAUNCHER) {
+					nearestLauncher = x.location;
+				}
+			}
+			Attack.launchNearbyMissiles();
+//			if(numLaunch<5){
+////				if(myTowers.length>0){
+////					MapLocation nearestMyTower = Map.nearestTower(myTowers);
+//					if(rc.isCoreReady())
+//						Map.safeMove(nearestLauncher);
+//				
+//			}else{
+				if(rc.isCoreReady() && enemyTowers.length>0)
+					Map.safeMove(enemyTowers[0]);
+				else if(rc.isCoreReady() && nearbyEnemies.length>5)
+					Map.safeMove(nearbyEnemies[0].location);
+				else if (rc.isCoreReady())
+					Map.safeMove(enemyHQ);
+//			}
+
+			Supply.requestSupplyForGroup();
+
+			
+//			if(currentRound>1600){
+//				if(rc.isCoreReady())
+//					Army.groundRush();
+//				Attack.launchMissiles();
+//			}else{
+//				if(rc.isCoreReady()){
+//					Army.moveArmy();
+//				Attack.launchNearbyMissiles();
+//				}
+//			}
+>>>>>>> 3c5a116a98ec71780232587848ca6d8484cea297
 				
 				/*
 				if (numLaunch<5){
