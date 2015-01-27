@@ -47,6 +47,7 @@ public class Ore {
 			
 		     
 	        Supply.requestSupply();
+	        Supply.reportSupply();
 		}
 		
 		//if under attack, broadcast for help
@@ -80,7 +81,8 @@ public class Ore {
 		}
 		
 		Supply.requestSupplyForGroup();
-		
+        Supply.reportSupply();
+
 	}
 	
 	public static void minerMove(MapLocation myLoc) throws GameActionException {

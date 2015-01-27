@@ -29,16 +29,14 @@ public class AirForce {
 	static int rotation = -1;
 
 	public static void runHelipad() throws GameActionException {
-		if (rc.isCoreReady()) {
-			int numDrones = rc.readBroadcast(Comms.droneCount);
-			if (rc.getTeamOre() > RobotType.DRONE.oreCost && numDrones < 10) { //&& numDrones < 100
-				if (RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.DRONE)) {
-				    
-					rc.broadcast(Comms.droneCount, numDrones + 1);
-			if (rc.getTeamOre() > RobotType.DRONE.oreCost + RobotType.TANK.oreCost && numDrones < 10) {
-				RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.DRONE);
-			}
-		}
+	    if (rc.isCoreReady()) {
+	        int numDrones = rc.readBroadcast(Comms.droneCount);
+	        if (rc.getTeamOre() > RobotType.DRONE.oreCost && numDrones < 10) { //&& numDrones < 100
+	            if (RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.DRONE)) {
+	                rc.broadcast(Comms.droneCount, numDrones + 1);
+	                }
+	            }
+	        }
 		
 	}
 	
@@ -65,7 +63,7 @@ public class AirForce {
 					Map.safeMove(enemyHQ);
 			}
 
-			
+			Supply.requestSupplyForGroup();
 
 			
 //			if(currentRound>1600){
@@ -110,6 +108,7 @@ public class AirForce {
 		}
 		}
 		
+		//Supply.requestSupply();
 	}
 
 	public static void runDrone() throws GameActionException {
@@ -122,8 +121,12 @@ public class AirForce {
 	    
 	    int idChannel = Comms.memory(rc.getID());
 	    int assignment = rc.readBroadcast(idChannel);
-	    if (assignment == 0)
-	        rc.broadcast(idChannel, rand.nextInt(10) + 1);
+	    if (assignment == 0) {
+	        int random = rand.nextInt(10) + 1;
+	        if (random < 10)
+	            random = 1;
+	        rc.broadcast(idChannel, random);
+	    }
 		RobotInfo[] enemies = rc.senseNearbyRobots(rc.getType().attackRadiusSquared, enemyTeam);
 		if (enemies.length > 1)
 		    if (rc.isCoreReady())
@@ -151,9 +154,6 @@ public class AirForce {
 				droneRush();
 			} else if (helpTower != 0) {
 				defendTower(helpTower);
-			} else if (numDrones < 100 && strategy != 1) { 
-				//rallyAround(myHQ);
-				containHQ();
 			} else if (droneDefense != 0 && numDrones < 20) {
 				int radius = RobotType.HQ.attackRadiusSquared + 25;
 				if (rc.getLocation().distanceSquaredTo(myHQ) < radius) {
@@ -251,11 +251,11 @@ public class AirForce {
 	}
 
 	private static void rallyContain(MapLocation rallyPoint, int radius) throws GameActionException {
-		if (myLoc.distanceSquaredTo(rallyPoint) > radius) {
-			rallyAround(rallyPoint);
-		} else {
-			Map.randomMove();
-		}
+//		if (myLoc.distanceSquaredTo(rallyPoint) > radius) {
+//			rallyAround(rallyPoint);
+//		} else {
+//			Map.randomMove();
+//		}
 		
 		//TODO
 	}
@@ -275,28 +275,36 @@ public class AirForce {
 	}
 	
 	private static void becomeSupplyDrone() throws GameActionException { //tania please make this work T.T TODO
-	    int assignment = rc.readBroadcast(Comms.memory(rc.getID()));
+	    int idChannel = Comms.memory(rc.getID());
+	    int assignment = rc.readBroadcast(idChannel);
 	    
 	    rc.setIndicatorString(1, assignment + "");
 	    if (rc.isCoreReady()) {
-	        if (rc.getSupplyLevel() < 250) {
-	            Map.tryMove(myHQ);
+            int highestSupplyLoc = rc.readBroadcast(Comms.highestSupplyLoc);
+	        if (rc.getSupplyLevel() < 300) {
+	            Map.tryMove(Map.intToLoc(highestSupplyLoc));
+	            rc.broadcast(idChannel, 2);
 	            rc.setIndicatorString(0, "go to hq");
 	            rc.setIndicatorString(2, "need more supply");
 	        } else {
-	            if (assignment < 3) {
+	            if (assignment > 2) {
 	                if (checkMinerSupply())
 	                    return;
 	                else if (checkMiningFactorySupply())
 	                    return;
 	            }
-	            else if (assignment < 8) {
-	                if (checkTankSupply())
+	            else if (assignment == 1) {
+	                if (checkLauncherSupply())
 	                    return;
-	                else if (checkTankFactorySupply())
+	                else if (checkAerospaceLabSupply())
 	                    return;
+	            } else if (assignment == 2) {
+	                if (highestSupplyLoc - Map.locToInt(rc.getLocation()) < 5)
+	                    rc.broadcast(idChannel, 1);
 	            }
-	            if (checkTankSupply());
+	            if (checkLauncherSupply());
+	            else if (checkAerospaceLabSupply());
+	            else if (checkTankSupply());
 	            else if (checkTankFactorySupply());
 	            else if (checkBasherSupply());
 	            else if (checkBarracksSupply());
@@ -304,13 +312,37 @@ public class AirForce {
 	            else if (checkMiningFactorySupply());
 	            else if (checkHelipadSupply());
 	            else {
-	                //Map.randomMove();
-                    Map.tryMove(myHQ);
-                    rc.setIndicatorString(0, "go to hq");
+	                Map.randomMove();
+                    //Map.tryMove(myHQ);
+                    rc.setIndicatorString(0, "move randomly");
                     rc.setIndicatorString(2, "nothing to do");
 	            }
 	        }
 	    }
+	}
+	
+	private static boolean checkLauncherSupply() throws GameActionException {
+	    if (rc.readBroadcast(Comms.lowestLauncherSupply) < 30) {
+	        MapLocation lowestSupplyLoc = Map.intToLoc(rc.readBroadcast(Comms.lowestLauncherSupplyLoc));
+            Map.tryMove(lowestSupplyLoc);
+            rc.setIndicatorString(0, "go to launchers");
+            rc.setIndicatorString(2, lowestSupplyLoc.toString());
+            //System.out.println(rc.readBroadcast(Comms.lowestLauncherSupply) + "go to launchers");
+            return true;
+	    }
+	    return false;
+	}
+	
+	private static boolean checkAerospaceLabSupply() throws GameActionException {
+	    if (rc.readBroadcast(Comms.lowestAerospaceLabSupply) < 100) {
+            MapLocation lowestSupplyLoc = Map.intToLoc(rc.readBroadcast(Comms.lowestAerospaceLabSupplyLoc));
+            Map.tryMove(lowestSupplyLoc);
+            rc.setIndicatorString(0, "go to aerospace lab");
+            rc.setIndicatorString(2, lowestSupplyLoc.toString());
+            //System.out.println(rc.readBroadcast(Comms.lowestAerospaceLabSupply) + "go to aerospace lab");
+            return true;
+        }
+	    return false;
 	}
 	
 	private static boolean checkTankSupply() throws GameActionException {

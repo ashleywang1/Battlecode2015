@@ -27,8 +27,8 @@ public class Supply {
 	static Random rand = RobotPlayer.rand;
 	static Direction[] directions = RobotPlayer.directions;
 
-	public static void runSupplyDepot() {
-		
+	public static void runSupplyDepot() throws GameActionException {
+		Supply.reportSupply();
 		
 	}
 	
@@ -45,6 +45,9 @@ public class Supply {
         } else if (type == RobotType.HELIPAD) {
             supplyChannel = Comms.lowestHelipadSupply;
             supplyLocChannel = Comms.lowestHelipadSupplyLoc;
+        } else if (type == RobotType.AEROSPACELAB) {
+            supplyChannel = Comms.lowestAerospaceLabSupply;
+            supplyLocChannel = Comms.lowestAerospaceLabSupplyLoc;
         } else {
             supplyChannel = Comms.lowestTankFactorySupply;
             supplyLocChannel = Comms.lowestTankFactorySupplyLoc;
@@ -69,6 +72,9 @@ public class Supply {
 	    } else if (type == RobotType.MINER) {
 	        supplyChannel = Comms.lowestMinerSupply;
 	        supplyLocChannel = Comms.lowestMinerSupplyLoc;
+	    } else if (type == RobotType.LAUNCHER) {
+	        supplyChannel = Comms.lowestLauncherSupply;
+	        supplyLocChannel = Comms.lowestLauncherSupplyLoc;
 	    } else {
 	        supplyChannel = Comms.lowestTankSupply;
 	        supplyLocChannel = Comms.lowestTankSupplyLoc;
@@ -91,6 +97,22 @@ public class Supply {
 	    	rc.broadcast(supplyLocChannel, Map.locToInt(currentLoc));
 	    } else if (avgSupply > 30 && rc.readBroadcast(supplyLocChannel) - Map.locToInt(currentLoc) < 10) {
 	        rc.broadcast(supplyChannel, 10000);
+	    }
+	}
+	
+	public static void reportSupply() throws GameActionException {
+	    int maxSupply = rc.readBroadcast(Comms.highestSupply);
+	    int avgSupply = (int) rc.getSupplyLevel();
+	    RobotInfo[] neighbors = rc.senseNearbyRobots(rc.getLocation(), 8, myTeam);
+	    for (RobotInfo n : neighbors) {
+	        avgSupply += n.supplyLevel;
+	    }
+	    avgSupply /= (neighbors.length + 1);
+	    if (avgSupply > maxSupply) {
+	        rc.broadcast(Comms.highestSupply, (int) rc.getSupplyLevel());
+	        rc.broadcast(Comms.highestSupplyLoc, Map.locToInt(rc.getLocation()));
+	    } else if (avgSupply < 400 && rc.readBroadcast(Comms.highestSupplyLoc) - Map.locToInt(rc.getLocation()) < 8) {
+	        rc.broadcast(Comms.highestSupply, avgSupply); 
 	    }
 	}
 

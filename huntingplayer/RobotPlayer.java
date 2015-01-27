@@ -70,6 +70,8 @@ public class RobotPlayer {
             rc.broadcast(Comms.lowestTankSupply, 10000);
             rc.broadcast(Comms.lowestHelipadSupply, 10000);
             rc.broadcast(Comms.lowestTankFactorySupply, 10000);
+            rc.broadcast(Comms.lowestLauncherSupply, 10000);
+            rc.broadcast(Comms.lowestAerospaceLabSupply, 10000);
         }
 
         while(true) {
@@ -173,6 +175,7 @@ public class RobotPlayer {
             }
         }
 
+        Supply.reportSupply();
     }
 
     private static void updateRobotCount() throws GameActionException { //This method uses about 2000 bytecode
@@ -242,6 +245,7 @@ public class RobotPlayer {
                 rc.broadcast(Comms.spawnBeaver, 1); //to fix the damage
             }
         }
+        Supply.reportSupply();
     }
 
     private static void runBeaver() throws GameActionException {
@@ -301,7 +305,7 @@ public class RobotPlayer {
             becomeSuppliers();
         }else if(aeroNum<6){
             becomeAeroLab();
-        }else if (supplyNum<10)
+        }else if (supplyNum<20)
             becomeSuppliers();
 
     }
@@ -498,13 +502,18 @@ public class RobotPlayer {
         double transferAmount = rc.getSupplyLevel();
         MapLocation suppliesToThisLocation = null;
         for(RobotInfo ri:nearbyAllies){
-            if (ri.type == RobotType.TOWER || ri.type == RobotType.HQ || 
-                    (!isHQOrSupplyDepot && ri.type == RobotType.DRONE) || (isBuilding(ri.type) && ri.supplyLevel > 300)) //|| (isBeaver && ri.supplyLevel > 10)
+            if (ri.type == RobotType.TOWER || 
+                    ri.type == RobotType.HQ|| 
+                    ri.type == RobotType.MISSILE || 
+                    //(!isHQOrSupplyDepot && ri.type == RobotType.DRONE) || 
+                    (isDrone && ri.type != RobotType.LAUNCHER && ri.supplyLevel > ri.type.supplyUpkeep * 2))
                 continue;
             if(ri.supplyLevel<lowestSupply){
                 lowestSupply = ri.supplyLevel;
                 if (!isHQOrSupplyDepot) {
                     transferAmount = (rc.getSupplyLevel()-ri.supplyLevel)/2;
+                } else if (isDrone && ri.type == RobotType.LAUNCHER) {
+                    transferAmount = rc.getSupplyLevel() - 100;
                 } else {
                     transferAmount = rc.getSupplyLevel();
                 }
@@ -517,7 +526,7 @@ public class RobotPlayer {
                 rc.transferSupplies((int)transferAmount, suppliesToThisLocation);
             }
         }catch(Exception e){
-            e.printStackTrace();
+            //e.printStackTrace();
         }
     }
 
