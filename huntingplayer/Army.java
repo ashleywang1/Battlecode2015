@@ -23,15 +23,12 @@ public class Army {
 	public static void runBarracks() throws GameActionException {
 		if (rc.isCoreReady()) {
 			if (Clock.getRoundNum() > 200) {
-
 				int helpTower = rc.readBroadcast(Comms.towerDistressCall);
 				if (rc.getTeamOre() > RobotType.BASHER.oreCost && helpTower != 0){
 					RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.BASHER);
 				}
 			}
-	      
-        Supply.requestSupply();
-
+		}
 
 	}
 
@@ -39,7 +36,6 @@ public class Army {
 		
 		Attack.attackTower();
 		moveArmy();
-
 		
 	}
 
@@ -63,7 +59,6 @@ public class Army {
 				}
 			}
 		}
-		Supply.requestSupply();
 	}
 
 	public static void runTank() throws GameActionException {
@@ -71,36 +66,38 @@ public class Army {
 			if (Map.inSafeArea(rc.getLocation())) {
 				Attack.hunt(); //if no enemy in sight, moveArmy
 			} else {
-			    if (Clock.getRoundNum() < 1600) {
-			        Attack.enemyZero();
-			        moveArmy();
-			    } else {
-			        MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
-			        if (enemyTowers.length > 0) {
-			            Map.tryMove(enemyTowers[0]); 
-			            Attack.attackTower();
-			        }else {
-			            Attack.enemyZero();
-			            Map.tryMove(enemyHQ);
-			        }
-
-			    }	
+				if (Clock.getRoundNum() < 1600) {
+					Attack.enemyZero();
+					moveArmy();
+				} else {
+					MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
+						if (enemyTowers.length > 0) {
+							Map.tryMove(enemyTowers[0]); 
+							Attack.attackTower();
+						}else {
+							Attack.enemyZero();
+							Map.tryMove(enemyHQ);
+						}
+		
+			}	
 			}
-		}
-		Supply.requestSupplyForGroup();
+				
+	}
 	}
 	
 	public static void moveArmy() throws GameActionException {
-
-	    if (rc.isCoreReady()) {
-	        int status = rc.readBroadcast(Comms.memory(rc.getID()));
-	        if (status == 1) { //defend the HQ
-	            tankDefender();
-	        } else {
-	            tankAttacker();
-	        }
-	    }
-
+		
+		if (rc.isCoreReady()) {
+			
+			
+			int status = rc.readBroadcast(Comms.memory(rc.getID()));
+			if (status == 1) { //defend the HQ
+				tankDefender();
+			} else {
+				tankAttacker();
+			}
+		}
+		
 	}
 
 	private static void tankAttacker() throws GameActionException {

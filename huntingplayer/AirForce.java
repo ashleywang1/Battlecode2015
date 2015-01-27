@@ -29,14 +29,14 @@ public class AirForce {
 	static int rotation = -1;
 
 	public static void runHelipad() throws GameActionException {
-	    if (rc.isCoreReady()) {
-	        int numDrones = rc.readBroadcast(Comms.droneCount);
-	        if (rc.getTeamOre() > RobotType.DRONE.oreCost && numDrones < 10) { //&& numDrones < 100
-	            if (RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.DRONE)) {
+		if (rc.isCoreReady()) {
+			int numDrones = rc.readBroadcast(Comms.droneCount);
+			if (rc.getTeamOre() > RobotType.DRONE.oreCost + RobotType.TANK.oreCost && numDrones < 10) {
+				RobotPlayer.trySpawn(directions[rand.nextInt(8)], RobotType.DRONE);
 	                rc.broadcast(Comms.droneCount, numDrones + 1);
 	                }
-	            }
-	        }
+			}
+		}
 		
 	}
 	
@@ -47,21 +47,30 @@ public class AirForce {
 			MapLocation[] enemyTowers = rc.senseEnemyTowerLocations();
 			MapLocation[] myTowers = rc.senseTowerLocations();
 			RobotInfo [] nearbyFriends = rc.senseNearbyRobots(25, myTeam);
+			RobotInfo [] nearbyEnemies = rc.senseNearbyRobots(50, enemyTeam);
 			int numLaunch = Map.nearbyRobots(nearbyFriends, RobotType.LAUNCHER);
 			
-			Attack.launchNearbyMissiles();
-			if(numLaunch<5){
-				if(myTowers.length>0){
-					MapLocation nearestMyTower = Map.nearestTower(myTowers);
-					if(rc.isCoreReady())
-						Map.safeMove(nearestMyTower);
+			MapLocation nearestLauncher = null;
+			for (RobotInfo x: nearbyFriends) {
+				if (x.type == RobotType.LAUNCHER) {
+					nearestLauncher = x.location;
 				}
-			}else{
+			}
+			Attack.launchNearbyMissiles();
+//			if(numLaunch<5){
+////				if(myTowers.length>0){
+////					MapLocation nearestMyTower = Map.nearestTower(myTowers);
+//					if(rc.isCoreReady())
+//						Map.safeMove(nearestLauncher);
+//				
+//			}else{
 				if(rc.isCoreReady() && enemyTowers.length>0)
 					Map.safeMove(enemyTowers[0]);
+				else if(rc.isCoreReady() && nearbyEnemies.length>5)
+					Map.safeMove(nearbyEnemies[0].location);
 				else if (rc.isCoreReady())
 					Map.safeMove(enemyHQ);
-			}
+//			}
 
 			Supply.requestSupplyForGroup();
 
@@ -108,7 +117,7 @@ public class AirForce {
 		}
 		}
 		
-		//Supply.requestSupply();
+		Supply.requestSupply();
 	}
 
 	public static void runDrone() throws GameActionException {
@@ -146,7 +155,6 @@ public class AirForce {
 			int helpTower = rc.readBroadcast(Comms.towerDistressCall);
 			boolean outnumbered = (rc.senseTowerLocations().length < rc.senseEnemyTowerLocations().length + 1);
 			int numDrones = rc.readBroadcast(Comms.droneCount);
-			//
 			//int droneTarget = rc.readBroadcast(Comms.droneTarget);
 			int droneDefense = rc.readBroadcast(Comms.droneRallyPoint);
 			
